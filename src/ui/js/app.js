@@ -3,6 +3,7 @@
  * swipe: http://www.awwwards.com/touchswipe-a-jquery-plugin-for-touch-and-gesture-based-interaction.html
  */
 var ViewBox = function(){
+	this.path = location.pathname.match(/[^/].*[^/]\/a/g)[0];
 	this.gallery = [];
 	this.is_open = false;
 	this.current = null;
@@ -31,7 +32,7 @@ ViewBox.prototype = {
 	},
 	
 	open : function(href){
-		this.dom_modal.html('');
+		
         href = this.formatHref(href);
 		href_ = href.split('/');
 		
@@ -46,6 +47,8 @@ ViewBox.prototype = {
 		if(this.current == href)
 			return;
 		
+		this.dom_modal.html('');
+		
 		// find next and prev
 		if($.inArray(href,this.gallery) + 1 > this.gallery.length-1)
 			this.next = href;
@@ -56,7 +59,7 @@ ViewBox.prototype = {
 		else
 			this.prev = this.gallery[($.inArray(href,this.gallery) - 1)];
 		
-		this.th = $('li[data-id='+href_[3]+'] a.viewbox img');
+		this.th = $('li[data-id='+href_[1]+'] a.viewbox img');
 		var src = this.th.attr('data-original');
 		var img = $('<img src="'+src+'" class="" />')
 		var load = this.resize();
@@ -95,14 +98,9 @@ ViewBox.prototype = {
 		this.prev = null;
 	},
 	
-	/*
-	 * url length after split wirh / is:
-	 * 3 - set
-	 * 4 - photo
-	 * 5 - fullscreen
-	 */
 	formatHref : function(href){
-		return href.match(/[^/].*[^/]/g)[0];
+		href = href.match(/a\/[^/].*[^/]/g)[0];
+		return href.replace(/^(a\/)/,'');
 	},
 	
 	resize : function(){
@@ -236,43 +234,42 @@ ViewBox.prototype = {
 			e.preventDefault();
 			if(!vb.is_open)
 				return;
-			history.pushState(null, null, '/'+vb.prev);
-			vb.open(vb.prev);
+			history.pushState(null, null, '/' + vb.path + '/' + vb.prev);
+			vb.open('/' + vb.path + '/' + vb.prev);
 		})
 		.on('click','a.next',function(e){
 			e.preventDefault();
 			if(!vb.is_open)
 				return;
-			history.pushState(null, null, '/'+vb.next);
-			vb.open(vb.next);
+			history.pushState(null, null, '/' + vb.path + '/' + vb.next);
+			vb.open('/' + vb.path + '/' + vb.next);
 		})
 		.on('click','a.vb-close',function(e){
 			e.preventDefault();
 			if(!vb.is_open)
 				return;
 			var href = vb.formatHref(location.pathname).split('/');
-			href = ['',href[0],href[1],href[2],''].join('/');
-			history.pushState(null, null, href);
+			history.pushState(null, null, '/' + vb.path + '/' + href[0]);
 			vb.close();
 		})
         .on('swiperight','#viewbox',function(){
             if(!vb.is_open)
 				return;
-			history.pushState(null, null, '/'+vb.prev);
-			vb.open(vb.prev);
+			history.pushState(null, null, '/' + vb.path + '/' + vb.prev);
+			vb.open('/' + vb.path + '/' + vb.prev);
         })
         .on('swipeleft','#viewbox',function(){
             if(!vb.is_open)
 				return;
-			history.pushState(null, null, '/'+vb.next);
-			vb.open(vb.next);
+			history.pushState(null, null, '/' + vb.path + '/' + vb.next);
+			vb.open('/' + vb.path + '/' + vb.next);
         });
 	
 	$(window).bind('popstate', function() {
 		//var href = location.pathname.replace(/^.*[\\/]/, ""); // get filename only
 		var href = vb.formatHref(location.pathname);
-		if(href && href.match(/\//g).length > 2)
-			vb.open(href);
+		if(href && href.match(/\//g) && href.match(/\//g).length > 0)
+			vb.open('/' + vb.path + '/' + href);
 		else
 			vb.close();
 	}).trigger('popstate');
@@ -285,8 +282,8 @@ ViewBox.prototype = {
 				if(!vb.is_open)
 					return;
 				e.preventDefault();
-				history.pushState(null, null, '/'+vb.prev);
-				vb.open(vb.prev);
+				history.pushState(null, null, '/' + vb.path + '/' + vb.prev);
+				vb.open('/' + vb.path + '/' + vb.prev);
 			break;
 			case 38:// up
 
@@ -295,8 +292,8 @@ ViewBox.prototype = {
 				if(!vb.is_open)
 					return;
 				e.preventDefault();
-				history.pushState(null, null, '/'+vb.next);
-				vb.open(vb.next);
+				history.pushState(null, null, '/' + vb.path + '/' + vb.next);
+				vb.open('/' + vb.path + '/' + vb.next);
 			break;
 			case 40:// down
 
@@ -306,8 +303,7 @@ ViewBox.prototype = {
 					return;
 				e.preventDefault();
 				var href = vb.formatHref(location.pathname).split('/');
-				href = ['',href[0],href[1],href[2],''].join('/');
-				history.pushState(null, null, href);
+				history.pushState(null, null, '/' + vb.path + '/' + href[0]);
 				vb.close();
 			break;
 		}
