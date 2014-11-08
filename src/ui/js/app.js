@@ -189,7 +189,7 @@ ViewBox.prototype = {
 
         if(offset < visible_area_start || offset > visible_area_end){
              // Not in view so scroll to it
-             $('html,body').animate({scrollTop: offset - window.innerHeight/3}, 1000);
+             $('html,body').scrollTop(offset - window.innerHeight/3);
              return false;
         }
         return true;
