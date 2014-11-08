@@ -1,0 +1,20 @@
+<?php
+/*
+ * Picu
+ * Sookolli Kaardid OÜ
+ * 2014-09
+ */
+
+// Config
+$conf = array(
+	'user' => '',
+	'passwd' => '',
+	'token' => '',
+	'key' => '',
+	'secret' => '',
+	'cache_sets' => __DIR__.'/cache/flickr_sets.json',
+	'sizes' => array('thumb'=>'Thumbnail','small'=>'Small 320','medium'=>'Medium 800','large'=>'Large 1600'),
+	'th_size' => 170,
+	'vb_size' => 'h',
+	'referer' => ''
+);
