@@ -120,12 +120,21 @@ $app->get('/clear-cache', function() use ($app) {
 });
 
 // Route - album view method
-$album_view = function($set,$photo = null) use ($app) {
+$album_view = function($set,$image = null) use ($app) {
     $id = $app->escape($set);
 	
 	// cache or flickr api
 	if(is_file(__DIR__.'/cache/flickr_set_'.$id.'.json')){
 		$photos = json_decode(file_get_contents(__DIR__.'/cache/flickr_set_'.$id.'.json'),true);
+        if($image !== null) {
+            foreach($photos['photoset']['photo'] as $k => $photo){
+                // thumbnail
+                if($photo['id'] == $image) {
+                    $photos['photoset']['thumbnail'] = $photo;
+                    break;
+                }
+            }
+        }
 	} else {
 		require_once __DIR__.'/vendor/phpflickr/phpFlickr.php';
 		$f = new phpFlickr($app['conf']['key'], $app['conf']['secret']);
@@ -156,8 +165,21 @@ $album_view = function($set,$photo = null) use ($app) {
 			$photo['width_vb'] = isset($photo['width_'.$app['conf']['vb_size']]) ? $photo['width_'.$app['conf']['vb_size']] : $photo['width_o'];
 			$photo['height_vb'] = isset($photo['height_'.$app['conf']['vb_size']]) ? $photo['height_'.$app['conf']['vb_size']] : $photo['height_o'];
 			$photos['photoset']['photo'][$k] = $photo;
+            // thumbnail
+            if($photo['id'] == $photos['photoset']['primary']) {
+                $photos['photoset']['thumbnail'] = $photo;
+            }
 		}
 		file_put_contents(__DIR__.'/cache/flickr_set_'.$id.'.json',json_encode($photos));
+        if($image !== null) {
+            foreach($photos['photoset']['photo'] as $k => $photo){
+                // thumbnail
+                if($photo['id'] == $image) {
+                    $photos['photoset']['thumbnail'] = $photo;
+                    break;
+                }
+            }
+        }
 	}
 		
 	return $app['twig']->render('set.html',array('set'=>$photos['photoset']));
@@ -165,8 +187,8 @@ $album_view = function($set,$photo = null) use ($app) {
 
 // Route - album view
 $app->get('/a/{set}/', $album_view);
-$app->get('/a/{set}/{photo}', $album_view);
-$app->get('/a/{set}/{photo}/fs', $album_view);
+$app->get('/a/{set}/{image}', $album_view);
+//$app->get('/a/{set}/{photo}/fs', $album_view);
 
 // Route - photo download
 $app->get('/d/{set}/{photo}', function($set, $photo) use ($app) {
