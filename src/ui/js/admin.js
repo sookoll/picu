@@ -1,6 +1,7 @@
-$(function() {
-	
-	$('#admin header a.clear-cache').on('click',function(e){
+;(function(window, $) {
+	'use strict';
+    
+	$('#admin a.clear-cache').on('click',function(e){
 		e.preventDefault();
 		$.ajax({
 			url:$(this).attr('href'),
@@ -10,7 +11,7 @@ $(function() {
 		.done(function(d) {
 			if(d && typeof d == 'object' && d.status == 1) {
 				// spieces
-				alert('Cache tühi');
+				alert('Cache tühi, lae leht uuesti!');
 			} else
 				alert('Cache tühjendamine ei õnnestunud');
 		})
@@ -19,4 +20,4 @@ $(function() {
 		});
 	});
 	
-});
+}(window, jQuery));

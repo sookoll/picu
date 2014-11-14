@@ -95,7 +95,7 @@ $app->get('/admin', function () use ($app) {
 		file_put_contents($app['conf']['cache_sets'],json_encode($sets));
 	}
 	
-    return $app['twig']->render('admin.html',array('sets'=>$sets['photoset']));
+    return $app['twig']->render('admin.html',array('sets'=>$sets['photoset'],'user'=>$user));
 });
 
 // Route - logout
@@ -105,19 +105,40 @@ $app->get('/logout', function () use ($app) {
 });
 
 // Route - clear cache
-$app->get('/clear-cache', function() use ($app) {
-	if (null === $user = $app['session']->get('user')) {
-        return $app->redirect($app['request']->getUriForPath('/').'login');
+$clear_cache = function($set = null) use ($app) {
+	
+    $status = 0;
+    if (null === $user = $app['session']->get('user')) {
+        $app->abort(404);
     }
-	$files = glob(__DIR__.'/cache/*'); // get all file names
-	foreach($files as $file){ // iterate files
-		if(is_file($file))
-			unlink($file); // delete file
-	}
+    // delete sets file
+    if($set === null && is_file($app['conf']['cache_sets']) && unlink($app['conf']['cache_sets']))
+        $status = 1;
+    // delete all
+    else if($set == 'all'){
+        $files = glob(__DIR__.'/cache/*'); // get all file names
+        foreach($files as $file){ // iterate files
+            if(is_file($file) && unlink($file))
+                $status = 1;
+            else {
+                $status = 0;
+                break;
+            }
+        }
+    }
+    // delete set
+    else {
+        if(is_file(__DIR__.'/cache/flickr_set_'.$set.'.json') && unlink(__DIR__.'/cache/flickr_set_'.$set.'.json')) {
+            $status = 1;
+        }
+    }
+    
 	return json_encode(array(
-		'status' => 1
+		'status' => $status
 	));
-});
+};
+$app->get('/clear-cache', $clear_cache);
+$app->get('/clear-cache/{set}', $clear_cache);
 
 // Route - album view method
 $album_view = function($set,$image = null) use ($app) {
