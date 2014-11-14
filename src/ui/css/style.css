@@ -144,6 +144,11 @@ a, a:hover, a:visited {
 	transform: translateY(-50%);
 	z-index:1001
 }
+#viewbox .img-container > div {
+	width:100%;
+	height:100%;
+    top: 0 !important;
+}
 #viewbox .img-container img {
 	position:absolute;
 	top:0;

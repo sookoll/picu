@@ -27,7 +27,7 @@ ViewBox.prototype = {
 		});
 		
 		this.dom_overlay = $('#viewbox');
-		this.dom_modal = $('#viewbox .img-container');
+		this.dom_modal = $('#viewbox .img-container div');
 		
 	},
 	
@@ -107,7 +107,7 @@ ViewBox.prototype = {
 		if(!this.th)
 			return;
 		var dims = this.calculateDimensions();
-		this.dom_modal.css({'width':dims.w+'px','height':dims.h+'px'});
+		this.dom_modal.parent().css({'width':dims.w+'px','height':dims.h+'px'});
 		return dims.load 
 	},
 	
@@ -201,11 +201,6 @@ ViewBox.prototype = {
 	
 	'use strict';
     
-    $.event.special.swipe.scrollSupressionThreshold = 10; // More than this horizontal displacement, and we will suppress scrolling.
-    $.event.special.swipe.horizontalDistanceThreshold = 30; // Swipe horizontal displacement must be more than this.
-    $.event.special.swipe.durationThreshold = 500; // More time than this, and it isn't a swipe.
-    $.event.special.swipe.verticalDistanceThreshold = 75; // Swipe vertical displacement must be less than this.
-	
 	if (typeof history.pushState === 'undefined'){
 		alert('Find some decent browser...');
 		return;
@@ -222,6 +217,27 @@ ViewBox.prototype = {
 	
 	// ViewBox
 	var vb = new ViewBox();
+    
+    // draggable
+    vb.dom_modal.pep({
+        axis: "x",
+        revert: true,
+        cssEaseDuration: 200,
+        stop: function(e, ui){
+            if(ui.pos.x > 100){
+                if(!vb.is_open)
+				    return;
+                history.pushState(null, null, '/' + vb.path + '/' + vb.prev);
+                vb.open('/' + vb.path + '/' + vb.prev);
+            }
+            else if(ui.pos.x < -100){
+                if(!vb.is_open)
+				    return;
+                history.pushState(null, null, '/' + vb.path + '/' + vb.next);
+                vb.open('/' + vb.path + '/' + vb.next);
+            }
+        }
+    });
 	
 	$('body')
 		.on('click','a.viewbox, a.full',function(e){
