@@ -126,6 +126,8 @@ a, a:hover, a:visited {
 	margin-left:4px
 }
 
+/* viewbox */
+
 #viewbox {
 	position:fixed;
 	display:none;
