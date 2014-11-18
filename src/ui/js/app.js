@@ -48,14 +48,22 @@ ViewBox.prototype = {
 			return;
 		
 		this.dom_modal.html('');
+        this.dom_overlay
+            .find('a.next, a.prev')
+            .removeClass('disabled');
+        
 		
 		// find next and prev
-		if($.inArray(href,this.gallery) + 1 > this.gallery.length-1)
-			this.next = href;
+		if($.inArray(href,this.gallery) + 1 > this.gallery.length-1){
+            this.next = href;
+            this.dom_overlay.find('a.next').addClass('disabled');
+        }
 		else
 			this.next = this.gallery[($.inArray(href,this.gallery) + 1)];
-		if($.inArray(href,this.gallery) - 1 < 0)
-			this.prev = href;
+		if($.inArray(href,this.gallery) - 1 < 0){
+            this.prev = href;
+            this.dom_overlay.find('a.prev').addClass('disabled');
+        }
 		else
 			this.prev = this.gallery[($.inArray(href,this.gallery) - 1)];
 		
@@ -199,7 +207,7 @@ ViewBox.prototype = {
 	
 };
 
-;(function ($, window, undefined) {
+;(function ($, window, ViewBox, undefined) {
 	
 	'use strict';
     
@@ -342,4 +350,4 @@ ViewBox.prototype = {
 		}, 3000);
 	});
 	
-}(jQuery, window));
+}(jQuery, window, ViewBox));

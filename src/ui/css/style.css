@@ -173,12 +173,12 @@ a, a:hover, a:visited {
 #viewbox .tools a {
 	display: inline-block;
 	margin:6px 12px;
-	color: #fff;
+	color: rgba(255,255,255,.8);
 	white-space: nowrap;
     font-size: 2em
 }
-#viewbox .tools i {
-	
+#viewbox .tools a.disabled {
+	color: rgba(255,255,255,.3);
 }
 #viewbox .tools span {
 	margin-left: 10px;
