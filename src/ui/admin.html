@@ -30,7 +30,9 @@
 				{% for set in sets %}
 				<li>
                     <div class="pull-left">
-                        <img src="https://farm{{ set.farm }}.staticflickr.com/{{ set.server }}/{{ set.primary }}_{{ set.secret }}_q.jpg" title="{{ set.title._content }}" />
+                        <a href="{{ app.request.baseUrl }}/a/{{ set.id }}/" target="_blank">
+                            <img src="https://farm{{ set.farm }}.staticflickr.com/{{ set.server }}/{{ set.primary }}_{{ set.secret }}_q.jpg" title="{{ set.title._content }}" />
+                        </a>
                     </div>
                     <div class="pull-left">
                         <h3>{{ set.title._content }}</h3>
