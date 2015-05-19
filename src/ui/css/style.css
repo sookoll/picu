@@ -95,7 +95,8 @@ a, a:hover, a:visited {
 	padding: 0
 }
 #set section ul li {
-	display: inline-block;
+	/*display: inline-block;*/
+	float: left;
 	border: 1px solid #ccc;
 	margin: 0 8px 8px 0;
 	box-shadow: 0 0 4px #ccc;
@@ -143,6 +144,8 @@ a, a:hover, a:visited {
 	margin-left: auto;
 	margin-right: auto;
 	top: 50%;
+	-ms-transform: translateY(-50%); /* IE 9 */
+	-webkit-transform: translateY(-50%); /* Safari */
 	transform: translateY(-50%);
 	z-index:1001
 }
