@@ -6,16 +6,16 @@
  */
 
 html, body {
-	position: relative;
-	height:100%;
-	background:#fff
+    position: relative;
+    height:100%;
+    background:#fff
 }
 
 body {
-	font-family: "Open Sans","lucida grande","Segoe UI",arial,verdana,"lucida sans unicode",tahoma,sans-serif;
-	font-size: 13px;
-	color: #3d464d;
-	font-weight: normal;
+    font-family: "Open Sans","lucida grande","Segoe UI",arial,verdana,"lucida sans unicode",tahoma,sans-serif;
+    font-size: 13px;
+    color: #3d464d;
+    font-weight: normal;
 }
 
 .no-scroll {
@@ -27,44 +27,44 @@ img:-moz-loading {
 }
 
 a, a:hover, a:visited {
-	text-decoration: none;
+    text-decoration: none;
 }
 
 /* login */
 #loginform {
-	width:400px;
-	margin:150px auto;
+    width:400px;
+    margin:150px auto;
 }
 
 #loginform .input {
-	margin-bottom:10px
+    margin-bottom:10px
 }
 
 /* admin */
 #admin header {
-	padding:10px 0;
-	background:#666;
-	box-shadow: 0 0 10px #333
+    padding:10px 0;
+    background:#666;
+    box-shadow: 0 0 10px #333
 }
 #admin header h1 {
-	color: #ddd;
-	font-weight:bold;
-	margin:0
+    color: #ddd;
+    font-weight:bold;
+    margin:0
 }
 
 #admin section ul {
-	list-style-type: none;
-	margin: 10px 0;
-	padding: 0
+    list-style-type: none;
+    margin: 10px 0;
+    padding: 0
 }
 #admin section ul li {
-	padding: 6px 0;
-	border-bottom: 1px solid #eee
+    padding: 6px 0;
+    border-bottom: 1px solid #eee
 }
 #admin section ul li img {
-	display: block;
-	width: 50px;
-	height: 50px;
+    display: block;
+    width: 50px;
+    height: 50px;
     margin-right: 12px;
 }
 #admin section ul li h3 {
@@ -78,118 +78,123 @@ a, a:hover, a:visited {
 /* set */
 
 #set .container {
-	max-width: 980px;
+    max-width: 980px;
 }
 #set header {
-	padding:10px 0;
+    padding:10px 0;
 }
 #set header h1 {
-	font-weight:normal;
-	font-size: 24px;
-	margin:0;
-	line-height: 50px;
+    font-weight:normal;
+    font-size: 24px;
+    margin:0;
+    line-height: 50px;
 }
 #set section ul {
-	list-style-type: none;
-	margin: 0;
-	padding: 0
+    list-style-type: none;
+    margin: 0;
+    padding: 0
 }
 #set section ul li {
-	/*display: inline-block;*/
-	float: left;
-	border: 1px solid #ccc;
-	margin: 0 8px 8px 0;
-	box-shadow: 0 0 4px #ccc;
+    /*display: inline-block;*/
+    float: left;
+    border: 1px solid #ccc;
+    margin: 0 8px 8px 0;
+    box-shadow: 0 0 4px #ccc;
 }
 #set section ul li > div {
-	position: relative;
-	border: 3px solid #fff;
+    position: relative;
+    border: 3px solid #fff;
 }
 #set section ul li a.viewbox {
-	display: block;
-	width: 170px;
-	height: 170px;
-	overflow: hidden;
-	text-align: center;
+    display: block;
+    width: 170px;
+    height: 170px;
+    overflow: hidden;
+    text-align: center;
     background: #ccc
 }
 #set section ul li .tools {
-	position: absolute;
-	bottom: 0;
-	background: rgba(0,0,0,0.4);
-	padding:4px;
-	width:100%;
-	text-align: right
+    position: absolute;
+    bottom: 0;
+    background: rgba(0,0,0,0.4);
+    padding:4px;
+    width:100%;
+    text-align: right
 }
 #set section ul li .tools a {
-	color: #eee;
-	display: inline-block;
-	margin-left:4px
+    color: #eee;
+    display: inline-block;
+    margin-left:4px
 }
 
 /* viewbox */
 
 #viewbox {
-	position:fixed;
-	display:none;
-	top:0;
-	left:0;
-	width:100%;
-	height:100%;
-	background:#000;
-	z-index:1000
+    position:fixed;
+    display:none;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:#000;
+    z-index:1000
 }
 #viewbox .img-container {
-	position: relative;
-	margin-left: auto;
-	margin-right: auto;
-	top: 50%;
-	-ms-transform: translateY(-50%); /* IE 9 */
-	-webkit-transform: translateY(-50%); /* Safari */
-	transform: translateY(-50%);
-	z-index:1001
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    top: 50%;
+    -ms-transform: translateY(-50%); /* IE 9 */
+    -webkit-transform: translateY(-50%); /* Safari */
+    transform: translateY(-50%);
+    z-index:1001
 }
 #viewbox .img-container > div {
-	width:100%;
-	height:100%;
+    width:100%;
+    height:100%;
     top: 0 !important;
 }
 #viewbox .img-container img {
-	position:absolute;
-	top:0;
-	left:0;
-	width:100%;
-	height:100%;
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
 }
 #viewbox .tools {
-	position: absolute;
-	bottom: 0;
-	background: rgba(0,0,0,0.4);
-	padding:4px;
-	width:100%;
-	z-index:1002;
-	color: #fff;
+    position: absolute;
+    bottom: 0;
+    background: rgba(0,0,0,0.4);
+    padding:4px;
+    width:100%;
+    z-index:1002;
+    color: #fff;
 }
 #viewbox .tools > div {
-	overflow: hidden
+    overflow: hidden
 }
 #viewbox .tools a {
-	display: inline-block;
-	margin:6px 12px;
-	color: rgba(255,255,255,.8);
-	white-space: nowrap;
+    display: inline-block;
+    margin:6px 12px;
+    color: rgba(255,255,255,.8);
+    white-space: nowrap;
     font-size: 2em
 }
 #viewbox .tools a.disabled {
-	color: rgba(255,255,255,.3);
+    color: rgba(255,255,255,.3);
 }
 #viewbox .tools span {
-	margin-left: 10px;
-	
+    margin-left: 10px;
+
 }
 
 @media (min-width: 992px) {
     #viewbox .tools a {
         font-size: 1em
     }
+}
+
+/* Photo */
+#photo #viewbox {
+    display:block;
 }
