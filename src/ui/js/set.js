@@ -77,6 +77,7 @@ ViewBox.prototype = {
         var index = this.gallery.indexOf(href) + 1;
         var tools = this.dom_overlay.find('.tools');
         tools.find('.title span').html(this.th.closest('a').attr('title'));
+        tools.find('.title a').attr('href', this.th.closest('li').find('a.link').attr('href'));
         tools.find('a.download').attr('href', this.th.closest('li').find('a.download').attr('href'));
         tools.find('a.full').attr('href', this.th.closest('li').find('a.full').attr('href'));
         tools.find('a.counter').html(index + ' / ' + this.gallery.length);

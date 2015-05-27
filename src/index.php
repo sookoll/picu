@@ -225,7 +225,7 @@ $app->get('/p/{set}/{photo}', function($set, $photo) use ($app) {
     $photos = json_decode(file_get_contents(__DIR__.'/cache/flickr_set_'.$set.'.json'),true);
     if(!isset($photos) || !isset($photos['photoset']) || !isset($photos['photoset']['photo']))
         $app->abort(404);
-    $src = null;
+    
     foreach($photos['photoset']['photo'] as $k => $v){
         if($v['id'] == $photo){
             $p = $v;

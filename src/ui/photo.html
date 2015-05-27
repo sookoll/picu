@@ -15,7 +15,7 @@
 <body id="photo">
     <!-- viewbox -->
     <div id="viewbox">
-        <div class="img-container">
+        <div class="img-container" >
             <div>
                 <img src="{{ photo.url_z }}" class="" />
                 <img src="{{ photo.url_vb }}" class="" />
@@ -30,6 +30,13 @@
             </div>
         </div>
     </div>
+    <!-- th -->
+    <img class="thumbnail hidden"
+        data-original="{{ photo.url_z }}"
+        style="width:{{ photo.th_w }}px;height:{{ photo.th_h }}px;margin-left:{{ photo.th_ml }}px;margin-top:{{ photo.th_mt }}px"
+        data-vb-src="{{ photo.url_vb }}"
+        data-vb-w="{{ photo.width_vb }}"
+        data-vb-h="{{ photo.height_vb }}" />
     <!-- js -->
     <script src="{{ app.request.baseUrl }}/vendor/jquery/jquery-2.1.1.min.js" type="text/javascript"></script>
     <script src="{{ app.request.baseUrl }}/ui/js/photo.js" type="text/javascript"></script>

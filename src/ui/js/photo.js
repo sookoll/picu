@@ -22,9 +22,8 @@ ViewBox.prototype = {
 
         this.dom_overlay = $('#viewbox');
         this.dom_modal = $('#viewbox .img-container div');
-        this.th = $(this.dom_modal).find('img:first');
+        this.th = $('img.thumbnail');
         var load = this.resize();
-        
 
     },
     
