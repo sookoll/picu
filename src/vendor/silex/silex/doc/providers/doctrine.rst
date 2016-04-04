@@ -2,11 +2,8 @@ DoctrineServiceProvider
 =======================
 
 The *DoctrineServiceProvider* provides integration with the `Doctrine DBAL
-<http://www.doctrine-project.org/projects/dbal>`_ for easy database access.
-
-.. note::
-
-    There is only a Doctrine DBAL. An ORM service is **not** supplied.
+<http://www.doctrine-project.org/projects/dbal>`_ for easy database access
+(Doctrine ORM integration is **not** supplied).
 
 Parameters
 ----------
@@ -67,14 +64,11 @@ Registering
 .. note::
 
     Doctrine DBAL comes with the "fat" Silex archive but not with the regular
-    one. If you are using Composer, add it as a dependency to your
-    ``composer.json`` file:
+    one. If you are using Composer, add it as a dependency:
 
-    .. code-block:: json
+    .. code-block:: bash
 
-        "require": {
-            "doctrine/dbal": "2.2.*",
-         }
+        composer require "doctrine/dbal:~2.2"
 
 Usage
 -----
@@ -106,7 +100,7 @@ and values are options::
                 'dbname'    => 'my_database',
                 'user'      => 'my_username',
                 'password'  => 'my_password',
-                'charset'   => 'utf8',
+                'charset'   => 'utf8mb4',
             ),
             'mysql_write' => array(
                 'driver'    => 'pdo_mysql',
@@ -114,7 +108,7 @@ and values are options::
                 'dbname'    => 'my_database',
                 'user'      => 'my_username',
                 'password'  => 'my_password',
-                'charset'   => 'utf8',
+                'charset'   => 'utf8mb4',
             ),
         ),
     ));

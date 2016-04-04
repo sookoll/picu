@@ -20,7 +20,7 @@ use Symfony\Component\HttpKernel\Client;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * SecurityServiceProvider
+ * SecurityServiceProvider.
  *
  * @author Fabien Potencier <fabien@symfony.com>
  */
@@ -54,7 +54,7 @@ class SecurityServiceProviderTest extends WebTestCase
         $this->assertEquals('ANONYMOUS', $client->getResponse()->getContent());
 
         $client->request('post', '/login_check', array('_username' => 'fabien', '_password' => 'bar'));
-        $this->assertEquals('Bad credentials', $app['security.last_error']($client->getRequest()));
+        $this->assertContains('Bad credentials', $app['security.last_error']($client->getRequest()));
         // hack to re-close the session as the previous assertions re-opens it
         $client->getRequest()->getSession()->save();
 
@@ -131,7 +131,7 @@ class SecurityServiceProviderTest extends WebTestCase
                     'http' => true,
                     'users' => array(
                         'admin' => array('ROLE_ADMIN', '513aeb0121909'),
-                    )
+                    ),
                 ),
             ),
         ));
@@ -205,7 +205,7 @@ class SecurityServiceProviderTest extends WebTestCase
                     'users' => array(
                         // password is foo
                         'fabien' => array('ROLE_USER', '5FZ2Z8QIkA7UTZ4BYkoC+GsReLf569mSKDsfods6LYQ8t+a8EW9oaircfMpmaLbPBh4FOBiiFyLfuZmTSUwzZg=='),
-                        'admin'  => array('ROLE_ADMIN', '5FZ2Z8QIkA7UTZ4BYkoC+GsReLf569mSKDsfods6LYQ8t+a8EW9oaircfMpmaLbPBh4FOBiiFyLfuZmTSUwzZg=='),
+                        'admin' => array('ROLE_ADMIN', '5FZ2Z8QIkA7UTZ4BYkoC+GsReLf569mSKDsfods6LYQ8t+a8EW9oaircfMpmaLbPBh4FOBiiFyLfuZmTSUwzZg=='),
                     ),
                 ),
             ),
@@ -217,29 +217,29 @@ class SecurityServiceProviderTest extends WebTestCase
             ),
         ));
 
-        $app->get('/login', function(Request $request) use ($app) {
+        $app->get('/login', function (Request $request) use ($app) {
             $app['session']->start();
 
             return $app['security.last_error']($request);
         });
 
-        $app->get('/', function() use ($app) {
-            $user = $app['security']->getToken()->getUser();
+        $app->get('/', function () use ($app) {
+            $user = $app['security.token_storage']->getToken()->getUser();
 
             $content = is_object($user) ? $user->getUsername() : 'ANONYMOUS';
 
-            if ($app['security']->isGranted('IS_AUTHENTICATED_FULLY')) {
+            if ($app['security.authorization_checker']->isGranted('IS_AUTHENTICATED_FULLY')) {
                 $content .= 'AUTHENTICATED';
             }
 
-            if ($app['security']->isGranted('ROLE_ADMIN')) {
+            if ($app['security.authorization_checker']->isGranted('ROLE_ADMIN')) {
                 $content .= 'ADMIN';
             }
 
             return $content;
         });
 
-        $app->get('/admin', function() use ($app) {
+        $app->get('/admin', function () use ($app) {
             return 'admin';
         });
 
@@ -256,7 +256,7 @@ class SecurityServiceProviderTest extends WebTestCase
                     'users' => array(
                         // password is foo
                         'dennis' => array('ROLE_USER', '5FZ2Z8QIkA7UTZ4BYkoC+GsReLf569mSKDsfods6LYQ8t+a8EW9oaircfMpmaLbPBh4FOBiiFyLfuZmTSUwzZg=='),
-                        'admin'  => array('ROLE_ADMIN', '5FZ2Z8QIkA7UTZ4BYkoC+GsReLf569mSKDsfods6LYQ8t+a8EW9oaircfMpmaLbPBh4FOBiiFyLfuZmTSUwzZg=='),
+                        'admin' => array('ROLE_ADMIN', '5FZ2Z8QIkA7UTZ4BYkoC+GsReLf569mSKDsfods6LYQ8t+a8EW9oaircfMpmaLbPBh4FOBiiFyLfuZmTSUwzZg=='),
                     ),
                 ),
             ),
@@ -268,23 +268,22 @@ class SecurityServiceProviderTest extends WebTestCase
             ),
         ));
 
-        $app->get('/', function() use ($app) {
-            $user = $app['security']->getToken()->getUser();
-
+        $app->get('/', function () use ($app) {
+            $user = $app['security.token_storage']->getToken()->getUser();
             $content = is_object($user) ? $user->getUsername() : 'ANONYMOUS';
 
-            if ($app['security']->isGranted('IS_AUTHENTICATED_FULLY')) {
+            if ($app['security.authorization_checker']->isGranted('IS_AUTHENTICATED_FULLY')) {
                 $content .= 'AUTHENTICATED';
             }
 
-            if ($app['security']->isGranted('ROLE_ADMIN')) {
+            if ($app['security.authorization_checker']->isGranted('ROLE_ADMIN')) {
                 $content .= 'ADMIN';
             }
 
             return $content;
         });
 
-        $app->get('/admin', function() use ($app) {
+        $app->get('/admin', function () use ($app) {
             return 'admin';
         });
 

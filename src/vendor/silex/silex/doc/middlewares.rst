@@ -20,7 +20,7 @@ Before Middleware
 A *before* application middleware allows you to tweak the Request before the
 controller is executed::
 
-    $app->before(function (Request $request) {
+    $app->before(function (Request $request, Application $app) {
         // ...
     });
 
@@ -30,13 +30,12 @@ If you want your middleware to be run even if an exception is thrown early on
 (on a 404 or 403 error for instance), then, you need to register it as an
 early event::
 
-    $app->before(function (Request $request) {
+    $app->before(function (Request $request, Application $app) {
         // ...
     }, Application::EARLY_EVENT);
 
-Of course, in this case, the routing and the security won't have been
-executed, and so you won't have access to the locale, the current route, or
-the security user.
+In this case, the routing and the security won't have been executed, and so you
+won't have access to the locale, the current route, or the security user.
 
 .. note::
 
@@ -146,9 +145,9 @@ possible or as late as possible::
 Short-circuiting the Controller
 -------------------------------
 
-If a before middleware returns a Response object, the Request handling is
-short-circuited (the next middlewares won't be run, neither the route
-callback), and the Response is passed to the after middlewares right away::
+If a *before* middleware returns a ``Response`` object, the request handling is
+short-circuited (the next middlewares won't be run, nor the route
+callback), and the Response is passed to the *after* middlewares right away::
 
     $app->before(function (Request $request) {
         // redirect the user to the login screen if access to the Resource is protected
@@ -159,5 +158,5 @@ callback), and the Response is passed to the after middlewares right away::
 
 .. note::
 
-    If a before middleware does not return a Response or ``null``, a
-    ``RuntimeException`` is thrown.
+    A ``RuntimeException`` is thrown if a before middleware does not return a
+    Response or ``null``.

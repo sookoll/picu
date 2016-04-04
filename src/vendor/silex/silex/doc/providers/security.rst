@@ -14,7 +14,12 @@ Services
 --------
 
 * **security**: The main entry point for the security provider. Use it to get
-  the current user token.
+  the current user token (only for Symfony up to 2.5).
+
+* **security.token_storage**: Gives access to the user token (Symfony 2.6+).
+
+* **security.authorization_checker**: Allows to check authorizations for the
+  users (Symfony 2.6+).
 
 * **security.authentication_manager**: An instance of
   `AuthenticationProviderManager
@@ -38,6 +43,8 @@ Services
 
 * **security.encoder.digest**: The encoder to use by default for all users.
 
+* **user**: Returns the current user
+
 .. note::
 
     The service provider defines many other services that are used internally
@@ -55,14 +62,11 @@ Registering
 .. note::
 
     The Symfony Security Component comes with the "fat" Silex archive but not
-    with the regular one. If you are using Composer, add it as a dependency to
-    your ``composer.json`` file:
+    with the regular one. If you are using Composer, add it as a dependency:
 
-    .. code-block:: json
+    .. code-block:: bash
 
-        "require": {
-            "symfony/security": "~2.3"
-        }
+        composer require symfony/security
 
 .. caution::
 
@@ -70,7 +74,7 @@ Registering
     booted. So, if you want to use it outside of the handling of a request,
     don't forget to call ``boot()`` first::
 
-        $application->boot();
+        $app->boot();
 
 .. caution::
 
@@ -81,7 +85,7 @@ Usage
 -----
 
 The Symfony Security component is powerful. To learn more about it, read the
-`Symfony2 Security documentation
+`Symfony Security documentation
 <http://symfony.com/doc/2.3/book/security.html>`_.
 
 .. tip::
@@ -98,6 +102,10 @@ Accessing the current User
 The current user information is stored in a token that is accessible via the
 ``security`` service::
 
+    // Symfony 2.6+
+    $token = $app['security.token_storage']->getToken();
+
+    // Symfony 2.3/2.5
     $token = $app['security']->getToken();
 
 If there is no information about the user, the token is ``null``. If the user
@@ -128,10 +136,24 @@ under ``/admin/``::
         ),
     );
 
-The ``pattern`` is a regular expression (it can also be a `RequestMatcher
+The ``pattern`` is a regular expression on the URL path; the ``http`` setting
+tells the security layer to use HTTP basic authentication and the ``users``
+entry defines valid users.
+
+If you want to restrict the firewall by more than the URL pattern (like the
+HTTP method, the client IP, the hostname, or any Request attributes), use an
+instance of a `RequestMatcher
 <http://api.symfony.com/master/Symfony/Component/HttpFoundation/RequestMatcher.html>`_
-instance); the ``http`` setting tells the security layer to use HTTP basic
-authentication and the ``users`` entry defines valid users.
+for the ``pattern`` option::
+
+    use Symfony/Component/HttpFoundation/RequestMatcher;
+
+    $app['security.firewalls'] = array(
+        'admin' => array(
+            'pattern' => new RequestMatcher('^/admin', 'example.com', 'POST'),
+            // ...
+        ),
+    );
 
 Each user is defined with the following information:
 
@@ -292,7 +314,7 @@ pattern::
         'secured' => array(
             'pattern' => '^/admin/',
             'form' => array('login_path' => '/login', 'check_path' => '/admin/login_check'),
-            'logout' => array('logout_path' => '/admin/logout'),
+            'logout' => array('logout_path' => '/admin/logout', 'invalidate_session' => true),
 
             // ...
         ),
@@ -330,6 +352,12 @@ Checking User Roles
 To check if a user is granted some role, use the ``isGranted()`` method on the
 security context::
 
+    // Symfony 2.6+
+    if ($app['security.authorization_checker']->isGranted('ROLE_ADMIN')) {
+        // ...
+    }
+
+    // Symfony 2.3/2.5
     if ($app['security']->isGranted('ROLE_ADMIN')) {
         // ...
     }
@@ -569,7 +597,8 @@ use in your configuration::
 
         // define the authentication listener object
         $app['security.authentication_listener.'.$name.'.wsse'] = $app->share(function () use ($app) {
-            return new WsseListener($app['security'], $app['security.authentication_manager']);
+            // use 'security' instead of 'security.token_storage' on Symfony <2.6
+            return new WsseListener($app['security.token_storage'], $app['security.authentication_manager']);
         });
 
         return array(
@@ -626,8 +655,6 @@ Traits
 
 ``Silex\Application\SecurityTrait`` adds the following shortcuts:
 
-* **user**: Returns the current user.
-
 * **encodePassword**: Encode a given password.
 
 .. code-block:: php
@@ -645,5 +672,24 @@ Traits
     $app->get('/', function () {
         // do something but only for admins
     })->secure('ROLE_ADMIN');
+
+.. caution::
+
+    The ``Silex\Route\SecurityTrait`` must be used with a user defined
+    ``Route`` class, not the application.
+
+    .. code-block:: php
+
+        use Silex\Route;
+
+        class MyRoute extends Route
+        {
+            use Route\SecurityTrait;
+        }
+
+    .. code-block:: php
+
+        $app['route_class'] = 'MyRoute';
+
 
 .. _cookbook: http://symfony.com/doc/current/cookbook/security/custom_authentication_provider.html
