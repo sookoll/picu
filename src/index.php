@@ -12,6 +12,7 @@ require_once __DIR__.'/config.php';
 require_once __DIR__.'/vendor/autoload.php';
 
 // Namespaces
+use Silex\Provider\MonologServiceProvider;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Silex\Provider\TwigServiceProvider;
@@ -21,8 +22,15 @@ use Silex\Provider\SessionServiceProvider;
 $app = new Silex\Application();
 
 // config
-$app['debug'] = false;
 $app['conf'] = $conf;
+$app['debug'] = $app['conf']['log_level'] == 'DEBUG' ? true : false;
+
+
+// Logging
+$app->register(new MonologServiceProvider(), array(
+    'monolog.logfile' => __DIR__.'/_logs/'.date("Y-m-d").'.log',
+    'monolog.level' => $app['conf']['log_level']
+));
 
 // Session
 $app->register(new SessionServiceProvider());
@@ -116,7 +124,7 @@ $clear_cache = function($set = null) use ($app) {
         $status = 1;
     // delete all
     else if($set == 'all'){
-        $files = glob(__DIR__.'/cache/*'); // get all file names
+        $files = glob(__DIR__.'/_cache/*'); // get all file names
         foreach($files as $file){ // iterate files
             if(is_file($file) && unlink($file))
                 $status = 1;
@@ -128,7 +136,7 @@ $clear_cache = function($set = null) use ($app) {
     }
     // delete set
     else {
-        if(is_file(__DIR__.'/cache/flickr_set_'.$set.'.json') && unlink(__DIR__.'/cache/flickr_set_'.$set.'.json')) {
+        if(is_file(__DIR__.'/_cache/flickr_set_'.$set.'.json') && unlink(__DIR__.'/_cache/flickr_set_'.$set.'.json')) {
             $status = 1;
         }
     }
@@ -140,13 +148,70 @@ $clear_cache = function($set = null) use ($app) {
 $app->get('/clear-cache', $clear_cache);
 $app->get('/clear-cache/{set}', $clear_cache);
 
+/**
+ * Upload image
+ */
+$app->post('/upload/{set}', function ($set) use ($app) {
+    $status = 0;
+    $i = 0;
+    
+    if ($app['conf']['anon_upload'] === false && null === $user = $app['session']->get('user')) {
+        $app->abort(404);
+    }
+    
+    if (empty($_FILES['files']) || $_FILES['files']['error'][0] != UPLOAD_ERR_OK) {
+        $app->abort(500);
+    }
+    
+    require_once __DIR__.'/vendor/phpflickr/phpFlickr.php';
+    $f = new phpFlickr($app['conf']['key'], $app['conf']['secret']);
+    $f->setToken($app['conf']['token']);
+    //change this to the permissions you will need
+    $f->auth("write");
+
+    // create dir
+    if(!is_dir(__DIR__.'/_tmp')){
+        mkdir(__DIR__.'/_tmp');
+    }
+    
+    $files = $_FILES['files'];
+    $uploaded = array();
+    
+    do {
+        
+        $target_file = __DIR__.'/_tmp/' . basename($files['name'][$i]);
+        
+        if (move_uploaded_file($files['tmp_name'][$i], $target_file)){
+            $status = 1;
+        }
+        // send to flickr
+        $uploaded[$i] = $f->sync_upload($target_file, basename($files['name'][$i]));
+		
+		if (!empty($uploaded[$i])) {
+			// assign to album
+			$result = $f->photosets_addPhoto($set, $uploaded[$i]);
+			// delete cache file
+			unlink($target_file);
+		}
+        
+        $i++;
+		
+    } while ($i < count($files['name']));
+
+    return $app->json(array(
+        'status' => $status,
+        'files' => $uploaded
+    ));
+    
+});
+
 // Route - album view method
 $album_view = function($set,$image = null) use ($app) {
     $id = $app->escape($set);
 
     // cache or flickr api
-    if(is_file(__DIR__.'/cache/flickr_set_'.$id.'.json')){
-        $photos = json_decode(file_get_contents(__DIR__.'/cache/flickr_set_'.$id.'.json'),true);
+    if(is_file(__DIR__.'/_cache/flickr_set_'.$id.'.json')){
+        $photos = json_decode(file_get_contents(__DIR__.'/_cache/flickr_set_'.$id.'.json'),true);
         if($image !== null) {
             foreach($photos['photoset']['photo'] as $k => $photo){
                 // thumbnail
@@ -168,31 +233,35 @@ $album_view = function($set,$image = null) use ($app) {
             $app->abort(404);
         // calculate thumb parameters
         foreach($photos['photoset']['photo'] as $k => $photo){
-            // landscape
-            if($photo['width_z'] > $photo['height_z']){
+            $width_o = (int) $photo['width_o'];
+			$height_o = (int) $photo['height_o'];
+			
+			// landscape
+            if($width_o > $height_o){
                 $photo['th_h'] = $app['conf']['th_size'];
-                $photo['th_w'] = ($app['conf']['th_size'] * $photo['width_z']) / $photo['height_z'];
+                $photo['th_w'] = ($app['conf']['th_size'] * $width_o) / $height_o;
                 $photo['th_mt'] = 0;
                 $photo['th_ml'] = -(($photo['th_w'] - $app['conf']['th_size'])/2);
             }
             // portrait
             else {
                 $photo['th_w'] = $app['conf']['th_size'];
-                $photo['th_h'] = ($app['conf']['th_size'] * $photo['height_z']) / $photo['width_z'];
+                $photo['th_h'] = ($app['conf']['th_size'] * $height_o) / $width_o;
                 $photo['th_ml'] = 0;
                 $photo['th_mt'] = -(($photo['th_h'] - $app['conf']['th_size'])/2);
             }
-            // FIXME: ??
+            // fallbacks
             $photo['url_vb'] = isset($photo['url_'.$app['conf']['vb_size']]) ? $photo['url_'.$app['conf']['vb_size']] : $photo['url_o'];
-            $photo['width_vb'] = isset($photo['width_'.$app['conf']['vb_size']]) ? $photo['width_'.$app['conf']['vb_size']] : $photo['width_o'];
-            $photo['height_vb'] = isset($photo['height_'.$app['conf']['vb_size']]) ? $photo['height_'.$app['conf']['vb_size']] : $photo['height_o'];
+			$photo['url_z'] = isset($photo['url_z']) ? $photo['url_z'] : $photo['url_o'];
+            $photo['width_vb'] = isset($photo['width_'.$app['conf']['vb_size']]) ? $photo['width_'.$app['conf']['vb_size']] : $width_o;
+            $photo['height_vb'] = isset($photo['height_'.$app['conf']['vb_size']]) ? $photo['height_'.$app['conf']['vb_size']] : $height_o;
             $photos['photoset']['photo'][$k] = $photo;
             // thumbnail
             if($photo['id'] == $photos['photoset']['primary']) {
                 $photos['photoset']['thumbnail'] = $photo;
             }
         }
-        file_put_contents(__DIR__.'/cache/flickr_set_'.$id.'.json',json_encode($photos));
+        file_put_contents(__DIR__.'/_cache/flickr_set_'.$id.'.json',json_encode($photos));
         if($image !== null) {
             foreach($photos['photoset']['photo'] as $k => $photo){
                 // thumbnail
@@ -219,10 +288,10 @@ $app->get('/p/{set}/{photo}', function($set, $photo) use ($app) {
     $p = null;
 
     // read file
-    if(!is_file(__DIR__.'/cache/flickr_set_'.$set.'.json'))
+    if(!is_file(__DIR__.'/_cache/flickr_set_'.$set.'.json'))
        $app->abort(404);
 
-    $photos = json_decode(file_get_contents(__DIR__.'/cache/flickr_set_'.$set.'.json'),true);
+    $photos = json_decode(file_get_contents(__DIR__.'/_cache/flickr_set_'.$set.'.json'),true);
     if(!isset($photos) || !isset($photos['photoset']) || !isset($photos['photoset']['photo']))
         $app->abort(404);
     
@@ -246,10 +315,10 @@ $app->get('/d/{set}/{photo}', function($set, $photo) use ($app) {
     $photo = $app->escape($photo);
 
     // read file
-    if(!is_file(__DIR__.'/cache/flickr_set_'.$set.'.json'))
+    if(!is_file(__DIR__.'/_cache/flickr_set_'.$set.'.json'))
        $app->abort(404);
 
-    $photos = json_decode(file_get_contents(__DIR__.'/cache/flickr_set_'.$set.'.json'),true);
+    $photos = json_decode(file_get_contents(__DIR__.'/_cache/flickr_set_'.$set.'.json'),true);
     if(!isset($photos) || !isset($photos['photoset']) || !isset($photos['photoset']['photo']))
         $app->abort(404);
     $src = null;

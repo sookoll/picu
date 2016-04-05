@@ -1,2 +1,5 @@
 src/config.php
-src/cache/*
+src/_cache/*
+src/_logs/*
+src/_tmp/*
+.idea
