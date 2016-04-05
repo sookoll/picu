@@ -14,10 +14,9 @@
  */
 
 require_once("phpFlickr.php");
-$f = new phpFlickr("<key>");
+$f = new phpFlickr("<api key>");
 
 $recent = $f->photos_getRecent();
-print_r($recent);
 
 foreach ($recent['photo'] as $photo) {
     $owner = $f->people_getInfo($photo['owner']);

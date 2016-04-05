@@ -44,7 +44,11 @@
                 bar.html('<div class="progress-bar"></div>');
             },
             done: function (e, data) {
-                console.log(data.result);
+                //console.log(data.result);
+                var span = el.closest('li').find('.tools span'),
+                    number = Number(span.text());
+                span.css('font-weight', 'bold');
+                span.text(number + 1);
             },
             progressall: function (e, data) {
                 var progress = parseInt(data.loaded / data.total * 100, 10);
