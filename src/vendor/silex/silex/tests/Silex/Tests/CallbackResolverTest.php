@@ -15,6 +15,9 @@ use Silex\CallbackResolver;
 
 class CallbackResolverTest extends \PHPUnit_Framework_Testcase
 {
+    private $app;
+    private $resolver;
+
     public function setup()
     {
         $this->app = new \Pimple();
@@ -23,7 +26,7 @@ class CallbackResolverTest extends \PHPUnit_Framework_Testcase
 
     public function testShouldResolveCallback()
     {
-        $this->app['some_service'] = function() { return new \stdClass(); };
+        $this->app['some_service'] = function () { return new \stdClass(); };
 
         $this->assertTrue($this->resolver->isValid('some_service:methodName'));
         $this->assertEquals(
@@ -39,7 +42,7 @@ class CallbackResolverTest extends \PHPUnit_Framework_Testcase
     }
 
     /**
-     * @expectedException          InvalidArgumentException
+     * @expectedException          \InvalidArgumentException
      * @expectedExceptionMessage   Service "some_service" does not exist.
      */
     public function testShouldThrowAnExceptionIfServiceIsMissing()

@@ -13,6 +13,7 @@ namespace Silex\Tests\Provider;
 
 use Silex\Application;
 use Silex\Provider\TwigServiceProvider;
+use Silex\Provider\HttpFragmentServiceProvider;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -27,7 +28,7 @@ class TwigServiceProviderTest extends \PHPUnit_Framework_TestCase
         $app = new Application();
 
         $app->register(new TwigServiceProvider(), array(
-            'twig.templates'    => array('hello' => 'Hello {{ name }}!'),
+            'twig.templates' => array('hello' => 'Hello {{ name }}!'),
         ));
 
         $app->get('/hello/{name}', function ($name) use ($app) {
@@ -41,12 +42,17 @@ class TwigServiceProviderTest extends \PHPUnit_Framework_TestCase
 
     public function testRenderFunction()
     {
+        if (!class_exists('Symfony\Component\HttpFoundation\RequestStack')) {
+            $this->markTestSkipped();
+        }
+
         $app = new Application();
 
+        $app->register(new HttpFragmentServiceProvider());
         $app->register(new TwigServiceProvider(), array(
-            'twig.templates'    => array(
+            'twig.templates' => array(
                 'hello' => '{{ render("/foo") }}',
-                'foo'   => 'foo',
+                'foo' => 'foo',
             ),
         ));
 
@@ -67,7 +73,7 @@ class TwigServiceProviderTest extends \PHPUnit_Framework_TestCase
     {
         $app = new Application();
         $app->register(new TwigServiceProvider(), array(
-            'twig.templates'    => array('foo' => 'foo'),
+            'twig.templates' => array('foo' => 'foo'),
         ));
         $loader = $this->getMock('\Twig_LoaderInterface');
         $loader->expects($this->never())->method('getSource');

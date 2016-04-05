@@ -59,7 +59,7 @@ a, a:hover, a:visited {
 }
 #admin section ul li {
     padding: 6px 0;
-    border-bottom: 1px solid #eee
+    position: relative;
 }
 #admin section ul li img {
     display: block;
@@ -72,7 +72,23 @@ a, a:hover, a:visited {
     margin: 0 0 5px 0
 }
 #admin section ul li .tools > * {
-    margin-right: 8px
+    margin-right: 8px;
+    /* fix for jquery.fileupload */
+    display: inline-block;
+    overflow: hidden;
+}
+
+#admin section ul li .bar {
+    margin: 0;
+    width: 100%;
+    height: 1px;
+    background: #ddd;
+    position: absolute;
+    bottom: 0;
+}
+#admin section ul li .progress-bar {
+    height: 1px;
+    background: blue;
 }
 
 /* set */

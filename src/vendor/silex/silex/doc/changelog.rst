@@ -1,6 +1,75 @@
 Changelog
 =========
 
+1.3.5 (2016-01-06)
+------------------
+
+* fixed typo in SecurityServiceProvider
+
+1.3.4 (2015-09-15)
+------------------
+
+* fixed some new deprecations
+* fixed translation registration for the validators
+
+1.3.3 (2015-09-08)
+------------------
+
+* added support for Symfony 3.0 and Twig 2.0
+* fixed some Form deprecations
+* removed deprecated method call in the exception handler
+* fixed Swiftmailer spool flushing when spool is not enabled
+
+1.3.2 (2015-08-24)
+------------------
+
+* no changes
+
+1.3.1 (2015-08-04)
+------------------
+
+* added missing support for the Expression constraint
+* fixed the possibility to override translations for validator error messages
+* fixed sub-mounts with same name clash
+* fixed session logout handler when a firewall is stateless
+
+1.3.0 (2015-06-05)
+------------------
+
+* added a `$app['user']` to get the current user (security provider)
+* added view handlers
+* added support for the OPTIONS HTTP method
+* added caching for the Translator provider
+* deprecated `$app['exception_handler']->disable()` in favor of `unset($app['exception_handler'])`
+* made Silex compatible with Symfony 2.7 an 2.8 (and keep compatibility with Symfony 2.3, 2.5, and 2.6)
+* removed deprecated TwigCoreExtension class (register the new HttpFragmentServiceProvider instead)
+* bumped minimum version of PHP to 5.3.9
+
+1.2.5 (2015-06-04)
+------------------
+
+* no code changes (last version of the 1.2 branch)
+
+1.2.4 (2015-04-11)
+------------------
+
+* fixed the exception message when mounting a collection that doesn't return a ControllerCollection
+* fixed Symfony dependencies (Silex 1.2 is not compatible with Symfony 2.7)
+
+1.2.3 (2015-01-20)
+------------------
+
+* fixed remember me listener
+* fixed translation files loading when they do not exist
+* allowed global after middlewares to return responses like route specific ones
+
+1.2.2 (2014-09-26)
+------------------
+
+* fixed Translator locale management
+* added support for the $app argument in application middlewares (to make it consistent with route middlewares)
+* added form.types to the Form provider
+
 1.2.1 (2014-07-01)
 ------------------
 
