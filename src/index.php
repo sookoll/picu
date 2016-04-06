@@ -59,6 +59,7 @@ $app->error(function (\Exception $e, $code) use ($app) {
         // default
         default:
             $message = 'We are sorry, but something went terribly wrong.';
+            $app['monolog']->addError("Error: $code " . json_encode($e));
     }
     return new Response($message);
 });
@@ -165,12 +166,21 @@ $app->post('/upload/{set}', function ($set) use ($app) {
     $status = 0;
     $i = 0;
     
-    if ($app['conf']['anon_upload'] === false && null === $user = $app['session']->get('user')) {
+    if ($app['conf']['upload']['anon'] === false && null === $user = $app['session']->get('user')) {
         $app->abort(404);
     }
     
     if (empty($_FILES['files']) || $_FILES['files']['error'][0] != UPLOAD_ERR_OK) {
-        $app->abort(500);
+        $app->abort(400);
+    }
+    
+    $valid = validateUpload($_FILES['files']);
+    
+    if (!$valid) {
+        return $app->json(array(
+            'status' => $status,
+            'msg' => 'Not valid'
+        ));
     }
     
     require_once __DIR__.'/vendor/phpflickr/phpFlickr.php';
@@ -188,14 +198,14 @@ $app->post('/upload/{set}', function ($set) use ($app) {
     $photos = array();
     
     do {
-        
-        $target_file = __DIR__.'/_tmp/' . basename($files['name'][$i]);
+        $name = basename($files['name'][$i]);
+        $target_file = __DIR__.'/_tmp/' . $name;
         
         if (move_uploaded_file($files['tmp_name'][$i], $target_file)){
             $status = 1;
         }
         // send to flickr
-        $uploaded = $f->sync_upload($target_file, basename($files['name'][$i]));
+        $uploaded = $f->sync_upload($target_file, $name);
 
         if (!empty($uploaded)) {
             // assign to album
@@ -203,11 +213,7 @@ $app->post('/upload/{set}', function ($set) use ($app) {
             // delete cache file
             unlink($target_file);
             // image url
-            /*$photos[$i] = $app['url_generator']->generate('photo', array(
-                'set' => $set,
-                'photo' => $uploaded
-            ));*/
-            $photos[$i] = array(
+            $photo = array(
                 $app['request']->getScheme() . '://',
                 $app['request']->getHost(),
                 $app['url_generator']->generate('photo', array(
@@ -215,7 +221,10 @@ $app->post('/upload/{set}', function ($set) use ($app) {
                     'photo' => $uploaded
                 ))
             );
-            $photos[$i] = implode('', $photos[$i]);
+            $photos[$i] = array(
+                'name' => $name,
+                'url' => implode('', $photo)
+            );
             $status = 2;
         }
 
@@ -404,4 +413,35 @@ function curl_download($Url){
     // Close the cURL resource, and free system resources
     curl_close($ch);
     return $output;
+}
+
+function validateUpload($files) {
+    global $app;
+    $i = 0;
+    
+    do {
+        
+        // file type
+        if (!preg_match($app['conf']['upload']['accept_file_types'], $files['name'][$i])) {
+            $app['monolog']->addError("Validate::accept_file_types[$i]: " . json_encode(preg_match($app['conf']['upload']['accept_file_types'], $files['name'][$i])));
+            return false;
+        }
+        
+        // file size
+        $file_size = get_file_size($files['tmp_name'][$i]);
+        
+        if ($file_size > $app['conf']['upload']['max_file_size']) {
+            $app['monolog']->addError("Validate::max_file_size: $file_size");
+            return false;
+        }
+        
+        $i++;
+
+    } while ($i < count($files['tmp_name']));
+    
+    return true;
+}
+
+function get_file_size($file_path) {
+    return filesize($file_path);
 }

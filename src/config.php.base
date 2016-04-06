@@ -19,6 +19,11 @@ $conf = array(
     'th_size' => 170,
     'vb_size' => 'h',
     'referer' => 'http://sookoll.ee',
-    // allow anon upload (used for uploading from gf-client to flickr)
-    'anon_upload' => false
+    // upload
+    'upload' => array(
+        // allow anon upload (used for uploading from gf-client to flickr)
+        'anon' => true,
+        'accept_file_types' => '/\.(gif|jpe?g|tif|png)$/i',
+        'max_file_size' => 7000000
+    )
 );
