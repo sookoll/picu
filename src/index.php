@@ -42,6 +42,8 @@ $app->register(new TwigServiceProvider(), array(
     )
 ));
 
+$app->register(new Silex\Provider\UrlGeneratorServiceProvider());
+
 // Error handling
 $app->error(function (\Exception $e, $code) use ($app) {
     if ($app['debug'])
@@ -100,6 +102,12 @@ $app->get('/admin', function () use ($app) {
         $f->auth("read");
 
         $sets = $f->photosets_getList();
+        
+        // create dir
+        if(!is_dir(__DIR__.'/_cache')){
+            mkdir(__DIR__.'/_cache');
+        }
+        
         file_put_contents($app['conf']['cache_sets'],json_encode($sets));
     }
 
@@ -175,7 +183,7 @@ $app->post('/upload/{set}', function ($set) use ($app) {
     }
     
     $files = $_FILES['files'];
-    $uploaded = array();
+    $photos = array();
     
     do {
         
@@ -185,25 +193,32 @@ $app->post('/upload/{set}', function ($set) use ($app) {
             $status = 1;
         }
         // send to flickr
-        $uploaded[$i] = $f->sync_upload($target_file, basename($files['name'][$i]));
-		
-		if (!empty($uploaded[$i])) {
-			// assign to album
-			$result = $f->photosets_addPhoto($set, $uploaded[$i]);
-			// delete cache file
-			unlink($target_file);
-		}
-        
+        $uploaded = $f->sync_upload($target_file, basename($files['name'][$i]));
+
+        if (!empty($uploaded)) {
+            // assign to album
+            $result = $f->photosets_addPhoto($set, $uploaded);
+            // delete cache file
+            unlink($target_file);
+            // image url
+            $photos[$i] = $app['url_generator']->generate('photo', array(
+                'set' => $set,
+                'photo' => $uploaded
+            ));
+            
+            $status = 2;
+        }
+
         $i++;
-		
+
     } while ($i < count($files['name']));
 
     return $app->json(array(
         'status' => $status,
-        'files' => $uploaded
+        'files' => $photos
     ));
     
-});
+})->bind('upload');
 
 // Route - album view method
 $album_view = function($set,$image = null) use ($app) {
@@ -307,7 +322,7 @@ $app->get('/p/{set}/{photo}', function($set, $photo) use ($app) {
 
     return $app['twig']->render('photo.html',array('photo'=>$p, 'set_id' => $set));
 
-});
+})->bind('photo');
 
 // Route - photo download
 $app->get('/d/{set}/{photo}', function($set, $photo) use ($app) {

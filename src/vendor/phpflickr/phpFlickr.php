@@ -225,6 +225,9 @@ if ( !class_exists('phpFlickr') ) {
 				curl_setopt($curl, CURLOPT_POST, true);
 				curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
 				curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+				// added by sookoll
+				curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+				curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
 				$response = curl_exec($curl);
 				curl_close($curl);
 			} else {
@@ -427,7 +430,9 @@ if ( !class_exists('phpFlickr') ) {
 				}
 
 				$photo = realpath($photo);
-				$args['photo'] = '@' . $photo;
+				//$args['photo'] = '@' . $photo;
+				// added by sookoll
+				$args['photo'] = new CURLFile($photo);
 
 
 				$curl = curl_init($this->upload_endpoint);
