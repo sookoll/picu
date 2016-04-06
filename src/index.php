@@ -17,6 +17,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Silex\Provider\TwigServiceProvider;
 use Silex\Provider\SessionServiceProvider;
+use Silex\Provider\UrlGeneratorServiceProvider;
+use Silex\Application\UrlGeneratorTrait;
 
 // Init application
 $app = new Silex\Application();
@@ -201,11 +203,19 @@ $app->post('/upload/{set}', function ($set) use ($app) {
             // delete cache file
             unlink($target_file);
             // image url
-            $photos[$i] = $app['url_generator']->generate('photo', array(
+            /*$photos[$i] = $app['url_generator']->generate('photo', array(
                 'set' => $set,
                 'photo' => $uploaded
-            ));
-            
+            ));*/
+            $photos[$i] = array(
+                $app['request']->getScheme() . '://',
+                $app['request']->getHost(),
+                $app['url_generator']->generate('photo', array(
+                    'set' => $set,
+                    'photo' => $uploaded
+                ))
+            );
+            $photos[$i] = implode('', $photos[$i]);
             $status = 2;
         }
 
@@ -249,9 +259,9 @@ $album_view = function($set,$image = null) use ($app) {
         // calculate thumb parameters
         foreach($photos['photoset']['photo'] as $k => $photo){
             $width_o = (int) $photo['width_o'];
-			$height_o = (int) $photo['height_o'];
-			
-			// landscape
+            $height_o = (int) $photo['height_o'];
+
+            // landscape
             if($width_o > $height_o){
                 $photo['th_h'] = $app['conf']['th_size'];
                 $photo['th_w'] = ($app['conf']['th_size'] * $width_o) / $height_o;
@@ -267,7 +277,7 @@ $album_view = function($set,$image = null) use ($app) {
             }
             // fallbacks
             $photo['url_vb'] = isset($photo['url_'.$app['conf']['vb_size']]) ? $photo['url_'.$app['conf']['vb_size']] : $photo['url_o'];
-			$photo['url_z'] = isset($photo['url_z']) ? $photo['url_z'] : $photo['url_o'];
+            $photo['url_z'] = isset($photo['url_z']) ? $photo['url_z'] : $photo['url_o'];
             $photo['width_vb'] = isset($photo['width_'.$app['conf']['vb_size']]) ? $photo['width_'.$app['conf']['vb_size']] : $width_o;
             $photo['height_vb'] = isset($photo['height_'.$app['conf']['vb_size']]) ? $photo['height_'.$app['conf']['vb_size']] : $height_o;
             $photos['photoset']['photo'][$k] = $photo;
@@ -307,10 +317,13 @@ $app->get('/p/{set}/{photo}', function($set, $photo) use ($app) {
        $app->abort(404);
 
     $photos = json_decode(file_get_contents(__DIR__.'/_cache/flickr_set_'.$set.'.json'),true);
-    if(!isset($photos) || !isset($photos['photoset']) || !isset($photos['photoset']['photo']))
+    if(!isset($photos) || !isset($photos['photoset']) || !isset($photos['photoset']['photo'])) {
         $app->abort(404);
+    }
     
-    foreach($photos['photoset']['photo'] as $k => $v){
+    $photoset = $photos['photoset'];
+    
+    foreach($photoset['photo'] as $k => $v){
         if($v['id'] == $photo){
             $p = $v;
             break;
@@ -320,7 +333,7 @@ $app->get('/p/{set}/{photo}', function($set, $photo) use ($app) {
     if($p === null)
         $app->abort(404);
 
-    return $app['twig']->render('photo.html',array('photo'=>$p, 'set_id' => $set));
+    return $app['twig']->render('photo.html',array('photo'=>$p, 'set_id' => $set, 'set' => $photoset));
 
 })->bind('photo');
 
