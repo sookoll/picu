@@ -105,12 +105,12 @@ $app->get('/admin', function () use ($app) {
         $f->auth("read");
 
         $sets = $f->photosets_getList();
-        
+
         // create dir
         if(!is_dir(__DIR__.'/_cache')){
             mkdir(__DIR__.'/_cache');
         }
-        
+
         file_put_contents($app['conf']['cache_sets'],json_encode($sets));
     }
 
@@ -165,24 +165,24 @@ $app->get('/clear-cache/{set}', $clear_cache);
 $app->post('/upload/{set}', function ($set) use ($app) {
     $status = 0;
     $i = 0;
-    
+
     if ($app['conf']['upload']['anon'] === false && null === $user = $app['session']->get('user')) {
         $app->abort(404);
     }
-    
+
     if (empty($_FILES['files']) || $_FILES['files']['error'][0] != UPLOAD_ERR_OK) {
         $app->abort(400);
     }
-    
+
     $valid = validateUpload($_FILES['files']);
-    
+
     if (!$valid) {
         return $app->json(array(
             'status' => $status,
             'msg' => 'Not valid'
         ));
     }
-    
+
     require_once __DIR__.'/vendor/phpflickr/phpFlickr.php';
     $f = new phpFlickr($app['conf']['key'], $app['conf']['secret']);
     $f->setToken($app['conf']['token']);
@@ -193,14 +193,14 @@ $app->post('/upload/{set}', function ($set) use ($app) {
     if(!is_dir(__DIR__.'/_tmp')){
         mkdir(__DIR__.'/_tmp');
     }
-    
+
     $files = $_FILES['files'];
     $photos = array();
-    
+
     do {
         $name = basename($files['name'][$i]);
         $target_file = __DIR__.'/_tmp/' . $name;
-        
+
         if (move_uploaded_file($files['tmp_name'][$i], $target_file)){
             $status = 1;
         }
@@ -226,6 +226,8 @@ $app->post('/upload/{set}', function ($set) use ($app) {
                 'url' => implode('', $photo)
             );
             $status = 2;
+        } else {
+            $app['monolog']->addError("Upload error ($target_file): $uploaded");
         }
 
         $i++;
@@ -236,7 +238,7 @@ $app->post('/upload/{set}', function ($set) use ($app) {
         'status' => $status,
         'files' => $photos
     ));
-    
+
 })->bind('upload');
 
 // Route - album view method
@@ -329,16 +331,16 @@ $app->get('/p/{set}/{photo}', function($set, $photo) use ($app) {
     if(!isset($photos) || !isset($photos['photoset']) || !isset($photos['photoset']['photo'])) {
         $app->abort(404);
     }
-    
+
     $photoset = $photos['photoset'];
-    
+
     foreach($photoset['photo'] as $k => $v){
         if($v['id'] == $photo){
             $p = $v;
             break;
         }
     }
-    
+
     if($p === null)
         $app->abort(404);
 
@@ -418,27 +420,27 @@ function curl_download($Url){
 function validateUpload($files) {
     global $app;
     $i = 0;
-    
+
     do {
-        
+
         // file type
         if (!preg_match($app['conf']['upload']['accept_file_types'], $files['name'][$i])) {
             $app['monolog']->addError("Validate::accept_file_types[$i]: " . json_encode(preg_match($app['conf']['upload']['accept_file_types'], $files['name'][$i])));
             return false;
         }
-        
+
         // file size
         $file_size = get_file_size($files['tmp_name'][$i]);
-        
+
         if ($file_size > $app['conf']['upload']['max_file_size']) {
             $app['monolog']->addError("Validate::max_file_size: $file_size");
             return false;
         }
-        
+
         $i++;
 
     } while ($i < count($files['tmp_name']));
-    
+
     return true;
 }
 

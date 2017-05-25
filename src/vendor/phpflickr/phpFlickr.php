@@ -100,9 +100,9 @@ if ( !class_exists('phpFlickr') ) {
 
 					$result = mysqli_query($db, "SELECT COUNT(*) 'count' FROM $table");
 					if( $result ) {
-						$result = mysqli_fetch_assoc($result);						
+						$result = mysqli_fetch_assoc($result);
 					}
-					
+
 					if ( $result && $result['count'] > $this->max_cache_rows ) {
 						mysqli_query($db, "DELETE FROM $table WHERE CURRENT_TIMESTAMP > expiration");
 						mysqli_query($db, 'OPTIMIZE TABLE ' . $this->cache_table);
@@ -179,16 +179,16 @@ if ( !class_exists('phpFlickr') ) {
 			if ($this->cache == 'db') {
 				//$this->cache_db->query("DELETE FROM $this->cache_table WHERE request = '$reqhash'");
 				$response = urlencode($response);
-				$sql = 'INSERT INTO '.$this->cache_table.' (request, response, expiration) 
+				$sql = 'INSERT INTO '.$this->cache_table.' (request, response, expiration)
 						VALUES (\''.$reqhash.'\', \''.$response.'\', TIMESTAMPADD(SECOND,'.$this->cache_expire.',CURRENT_TIMESTAMP))
-						ON DUPLICATE KEY UPDATE response=\''.$response.'\', 
+						ON DUPLICATE KEY UPDATE response=\''.$response.'\',
 						expiration=TIMESTAMPADD(SECOND,'.$this->cache_expire.',CURRENT_TIMESTAMP) ';
 
 				$result = mysqli_query($this->cache_db, $sql);
 				if(!$result) {
 					echo mysqli_error($this->cache_db);
 				}
-					
+
 				return $result;
 			} elseif ($this->cache == "fs") {
 				$file = $this->cache_dir . "/" . $reqhash . ".cache";
@@ -429,11 +429,10 @@ if ( !class_exists('phpFlickr') ) {
 					$args["api_sig"] = $api_sig;
 				}
 
-				$photo = realpath($photo);
+				// changed by sookoll
+				//$photo = realpath($photo);
 				//$args['photo'] = '@' . $photo;
-				// added by sookoll
 				$args['photo'] = new CURLFile($photo);
-
 
 				$curl = curl_init($this->upload_endpoint);
 				curl_setopt($curl, CURLOPT_POST, true);
