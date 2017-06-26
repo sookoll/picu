@@ -267,13 +267,14 @@ $album_view = function($set,$image = null) use ($app) {
         $photos = $f->photosets_getPhotos($id, 'date_taken, geo, tags, url_o, url_'.$app['conf']['vb_size'].', url_z');
         if(!isset($photos) || !isset($photos['photoset']) || !isset($photos['photoset']['photo']))
             $app->abort(404);
-        // calculate thumb parameters
+        // calculate thumb parameters, originals are wrong in portrait
         foreach($photos['photoset']['photo'] as $k => $photo){
             $width_o = (int) $photo['width_o'];
             $height_o = (int) $photo['height_o'];
+            $portrait = ((isset($photo['height_z']) && (int) $photo['height_z'] > (int) $photo['width_z']) || ($height_o > $width_o));
 
             // landscape
-            if($width_o > $height_o){
+            if(!$portrait){
                 $photo['th_h'] = $app['conf']['th_size'];
                 $photo['th_w'] = ($app['conf']['th_size'] * $width_o) / $height_o;
                 $photo['th_mt'] = 0;
@@ -282,7 +283,12 @@ $album_view = function($set,$image = null) use ($app) {
             // portrait
             else {
                 $photo['th_w'] = $app['conf']['th_size'];
-                $photo['th_h'] = ($app['conf']['th_size'] * $height_o) / $width_o;
+                if ($width_o > $height_o) {
+                    $photo['th_h'] = ($app['conf']['th_size'] * $width_o) / $height_o;
+                } else {
+                    $photo['th_h'] = ($app['conf']['th_size'] * $height_o) / $width_o;
+                }
+
                 $photo['th_ml'] = 0;
                 $photo['th_mt'] = -(($photo['th_h'] - $app['conf']['th_size'])/2);
             }
