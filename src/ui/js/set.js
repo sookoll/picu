@@ -225,40 +225,48 @@ ViewBox.prototype = {
         return;
     }
 
-    $('img.lazy').lazyload({
-        threshold : 200,
-        effect : 'fadeIn'
-    });
-
     $("#set .thumbs").justifiedGallery({
         lastRow: 'center',
         rowHeight: 250,
+        maxRowHeight: 500,
         margins: 4
     });
+    $("#set .thumbs .caption").removeClass('hidden');
+
+    /*setTimeout(function () {
+        $('img.lazy').lazyload({
+            threshold : 200,
+            effect : 'fadeIn'
+        });
+    }, 1500);*/
 
     // ViewBox
     var vb = new ViewBox();
 
-    // draggable
-    vb.dom_modal.pep({
-        axis: "x",
-        revert: true,
-        cssEaseDuration: 200,
-        stop: function(e, ui){
-            if(ui.pos.x > 100){
-                if(!vb.is_open)
-                    return;
-                history.pushState(null, null, '/' + vb.path + '/' + vb.prev);
-                vb.open('/' + vb.path + '/' + vb.prev);
-            }
-            else if(ui.pos.x < -100){
-                if(!vb.is_open)
-                    return;
-                history.pushState(null, null, '/' + vb.path + '/' + vb.next);
-                vb.open('/' + vb.path + '/' + vb.next);
+    // slide
+    /*$('body').swipe({
+        swipe: function(event,direction) {
+            if(direction == 'left') {
+                slideHandle('left');
+            } else if(direction == 'right') {
+                slideHandle('right');
             }
         }
-    });
+    });*/
+
+    function slideHandle (direction) {
+        if (direction === 'right') {
+            if(!vb.is_open)
+                return;
+            history.pushState(null, null, '/' + vb.path + '/' + vb.prev);
+            vb.open('/' + vb.path + '/' + vb.prev);
+        } else {
+            if(!vb.is_open)
+                return;
+            history.pushState(null, null, '/' + vb.path + '/' + vb.next);
+            vb.open('/' + vb.path + '/' + vb.next);
+        }
+    }
 
     $('body')
         .on('click','a.viewbox, a.full',function(e){

@@ -264,7 +264,7 @@ $album_view = function($set,$image = null) use ($app) {
 
         //change this to the permissions you will need
         $f->auth("read");
-        $photos = $f->photosets_getPhotos($id, 'date_taken, geo, tags, url_o, url_'.$app['conf']['vb_size'].', url_z');
+        $photos = $f->photosets_getPhotos($id, 'date_taken, geo, tags, url_o, url_'.$app['conf']['vb_size'].', url_z, url_c');
         if(!isset($photos) || !isset($photos['photoset']) || !isset($photos['photoset']['photo']))
             $app->abort(404);
         // calculate thumb parameters, originals are wrong in portrait

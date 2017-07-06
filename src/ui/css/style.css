@@ -107,7 +107,7 @@ a, a:hover, a:visited {
     height: auto;
     color: #fff;
     background-repeat: no-repeat;
-    background-position: center top;
+    background-position: center center;
     background-size: cover;
 }
 #set header h1 {
@@ -123,9 +123,9 @@ a, a:hover, a:visited {
     transition: all 0.3s;
 }
 #set .thumbs img:hover, #set .thumbs img.hover {
-    -moz-transform: scale(1.1);
-    -webkit-transform: scale(1.1);
-    transform: scale(1.1);
+    -moz-transform: scale(1.05);
+    -webkit-transform: scale(1.05);
+    transform: scale(1.05);
 }
 
 /* viewbox */
@@ -179,7 +179,7 @@ a, a:hover, a:visited {
     margin:6px 12px;
     color: rgba(255,255,255,.8);
     white-space: nowrap;
-    font-size: 2em
+    font-size: 1em
 }
 #viewbox .tools a.disabled {
     color: rgba(255,255,255,.3);
