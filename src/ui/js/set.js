@@ -67,7 +67,8 @@ ViewBox.prototype = {
         else
             this.prev = this.gallery[($.inArray(href,this.gallery) - 1)];
 
-        this.th = $('li[data-id='+href_[1]+'] a.viewbox img');
+        this.th = $('a.viewbox[data-id='+href_[1]+'] img');
+
         var src = this.th.attr('data-original');
         var img = $('<img src="'+src+'" class="" />')
         var load = this.resize();
@@ -76,10 +77,10 @@ ViewBox.prototype = {
         // tools
         var index = this.gallery.indexOf(href) + 1;
         var tools = this.dom_overlay.find('.tools');
-        tools.find('.title span').html(this.th.closest('a').attr('title'));
-        tools.find('.title a').attr('href', this.th.closest('li').find('a.link').attr('href'));
-        tools.find('a.download').attr('href', this.th.closest('li').find('a.download').attr('href'));
-        tools.find('a.full').attr('href', this.th.closest('li').find('a.full').attr('href'));
+        tools.find('.title span').html(this.th.attr('alt'));
+        tools.find('.title a').attr('href', this.th.data('img-link'));
+        tools.find('a.download').attr('href', this.th.data('img-download'));
+        tools.find('a.full').attr('href', this.th.data('img-full'));
         tools.find('a.counter').html(index + ' / ' + this.gallery.length);
 
         if(!this.is_open){
@@ -97,6 +98,9 @@ ViewBox.prototype = {
 
         // scroll page if out of view
         this.scrollToView(this.th)
+
+        $('a.viewbox img').removeClass('hover');
+        this.th.addClass('hover');
     },
 
     close : function(){
@@ -107,6 +111,10 @@ ViewBox.prototype = {
         this.current = null;
         this.next = null;
         this.prev = null;
+        setTimeout(function () {
+            $('a.viewbox img').removeClass('hover');
+        }, 200);
+
     },
 
     formatHref : function(href){
@@ -222,8 +230,10 @@ ViewBox.prototype = {
         effect : 'fadeIn'
     });
 
-    $('#set section ul li').hover(function(){
-        $(this).find('.tools').toggleClass('hidden');
+    $("#set .thumbs").justifiedGallery({
+        lastRow: 'center',
+        rowHeight: 250,
+        margins: 4
     });
 
     // ViewBox

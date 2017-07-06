@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:fb="http://ogp.me/ns/fb#">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:fb="http://ogp.me/ns/fb#" id="set">
 <head>
     <title>{{ set.title }}</title>
     <meta property="og:title" content="{{ set.title }}" />
@@ -7,40 +7,33 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta property="og:url" content="{{ app.request.uri }}" />
-    <meta property="og:image" content="https://farm{{ set.thumbnail.farm }}.staticflickr.com/{{ set.thumbnail.server }}/{{ set.thumbnail.id }}_{{ set.thumbnail.secret }}_q.jpg" />
-    <link rel="image_src" href="https://farm{{ set.thumbnail.farm }}.staticflickr.com/{{ set.thumbnail.server }}/{{ set.thumbnail.id }}_{{ set.thumbnail.secret }}_q.jpg" />
+    <meta property="og:image" content="https://farm{{ set.thumbnail.farm }}.staticflickr.com/{{ set.thumbnail.server }}/{{ set.thumbnail.id }}_{{ set.thumbnail.secret }}_b.jpg" />
+    <link rel="image_src" href="https://farm{{ set.thumbnail.farm }}.staticflickr.com/{{ set.thumbnail.server }}/{{ set.thumbnail.id }}_{{ set.thumbnail.secret }}_b.jpg" />
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{{ app.request.baseUrl }}/vendor/justifiedGallery.min/justifiedGallery.min.css" media="screen" />
     <link rel="stylesheet" type="text/css" href="{{ app.request.baseUrl }}/ui/css/style.css" media="screen" />
 </head>
-<body id="set">
-    <header>
-        <div class="container">
-            <h1 class="text-center">{{ set.title }}</h1>
-        </div>
+<body>
+    <header style="background-image:linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),url(https://farm{{ set.thumbnail.farm }}.staticflickr.com/{{ set.thumbnail.server }}/{{ set.thumbnail.id }}_{{ set.thumbnail.secret }}_b.jpg)">
+        <h1 class="text-center">{{ set.title }}</h1>
     </header>
     <section>
-        <div class="container">
-            <ul class="text-center">
-                {% for photo in set.photo %}
-                <li data-id="{{ photo.id }}">
-                    <div>
-                        <a class="viewbox" href="{{ app.request.baseUrl }}/a/{{ set.id }}/{{ photo.id }}" title="{{ photo.title }}">
-                            <img class="lazy"
-                                 data-original="{{ photo.url_z }}"
-                                 style="width:{{ photo.th_w }}px;height:{{ photo.th_h }}px;margin-left:{{ photo.th_ml }}px;margin-top:{{ photo.th_mt }}px"
-                                 data-vb-src="{{ photo.url_vb }}"
-                                 data-vb-w="{{ photo.width_vb }}"
-                                 data-vb-h="{{ photo.height_vb }}" />
-                        </a>
-                        <div class="tools hidden">
-                            <a href="{{ app.request.baseUrl }}/p/{{ set.id }}/{{ photo.id }}" class="link" title="Otseviide"><i class="glyphicon glyphicon-link"></i></a>
-                            <a href="{{ app.request.baseUrl }}/d/{{ set.id }}/{{ photo.id }}" class="download" title="Lae alla"><i class="glyphicon glyphicon-save"></i></a>
-                            <!--<a href="{{ app.request.baseUrl }}/a/{{ set.id }}/{{ photo.id }}/fs" class="full" title="Vaata täisekraanil"><i class="glyphicon glyphicon-resize-full"></i></a>-->
-                        </div>
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
+        <div class="thumbs">
+            {% for photo in set.photo %}
+            <a data-id="{{ photo.id }}" class="viewbox" href="{{ app.request.baseUrl }}/a/{{ set.id }}/{{ photo.id }}">
+                <img alt="{{ photo.title }}"
+                    class="lazy"
+                    data-original="{{ photo.url_z }}"
+                    data-vb-src="{{ photo.url_vb }}"
+                    data-vb-w="{{ photo.width_vb }}"
+                    data-vb-h="{{ photo.height_vb }}"
+                    data-img-link="{{ app.request.baseUrl }}/p/{{ set.id }}/{{ photo.id }}"
+                    data-img-download="{{ app.request.baseUrl }}/d/{{ set.id }}/{{ photo.id }}"
+                    data-img-full="{{ app.request.baseUrl }}/a/{{ set.id }}/{{ photo.id }}/fs"
+                    src="http://placehold.it/{{ photo.th_w }}x{{ photo.th_h}}"
+                />
+            </a>
+            {% endfor %}
         </div>
     </section>
     <!-- viewbox -->
@@ -69,6 +62,7 @@
     <script src="{{ app.request.baseUrl }}/vendor/jquery/jquery-2.1.1.min.js" type="text/javascript"></script>
     <script src="{{ app.request.baseUrl }}/vendor/jquery/jquery.pep.js" type="text/javascript"></script>
     <script src="{{ app.request.baseUrl }}/vendor/jquery/jquery.lazyload.min.js" type="text/javascript"></script>
+    <script src="{{ app.request.baseUrl }}/vendor/justifiedGallery.min/jquery.justifiedGallery.min.js" type="text/javascript"></script>
     <script src="{{ app.request.baseUrl }}/ui/js/set.js" type="text/javascript"></script>
 </body>
 </html>

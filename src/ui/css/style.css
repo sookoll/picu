@@ -2,7 +2,7 @@
  * Miucode text editor version 3.0 Beta
  * Author: Mihkel Oviir
  * This work is licensed under MIT License, see http://www.opensource.org/licenses/mit-license.php
- * 
+ *
  */
 
 html, body {
@@ -92,55 +92,40 @@ a, a:hover, a:visited {
 }
 
 /* set */
-
-#set .container {
-    max-width: 980px;
+#set, #set body, #photo, #photo body {
+    background: #000;
+    color: #999
+}
+#set .text-center {
+    text-align: center;
+}
+#set .hidden {
+    display: none
 }
 #set header {
     padding:10px 0;
+    height: auto;
+    color: #fff;
+    background-repeat: no-repeat;
+    background-position: center top;
+    background-size: cover;
 }
 #set header h1 {
     font-weight:normal;
     font-size: 24px;
     margin:0;
     line-height: 50px;
+    text-shadow: 0 0 4px #000;
 }
-#set section ul {
-    list-style-type: none;
-    margin: 0;
-    padding: 0
+#set .thumbs img {
+    -moz-transition: all 0.3s;
+    -webkit-transition: all 0.3s;
+    transition: all 0.3s;
 }
-#set section ul li {
-    /*display: inline-block;*/
-    float: left;
-    border: 1px solid #ccc;
-    margin: 0 8px 8px 0;
-    box-shadow: 0 0 4px #ccc;
-}
-#set section ul li > div {
-    position: relative;
-    border: 3px solid #fff;
-}
-#set section ul li a.viewbox {
-    display: block;
-    width: 170px;
-    height: 170px;
-    overflow: hidden;
-    text-align: center;
-    background: #ccc
-}
-#set section ul li .tools {
-    position: absolute;
-    bottom: 0;
-    background: rgba(0,0,0,0.4);
-    padding:4px;
-    width:100%;
-    text-align: right
-}
-#set section ul li .tools a {
-    color: #eee;
-    display: inline-block;
-    margin-left:4px
+#set .thumbs img:hover, #set .thumbs img.hover {
+    -moz-transform: scale(1.1);
+    -webkit-transform: scale(1.1);
+    transform: scale(1.1);
 }
 
 /* viewbox */
@@ -205,6 +190,13 @@ a, a:hover, a:visited {
 }
 
 @media (min-width: 992px) {
+    #set header {
+        height: 350px;
+    }
+    #set header h1 {
+        line-height: 350px;
+        font-size: 3em
+    }
     #viewbox .tools a {
         font-size: 1em
     }

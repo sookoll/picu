@@ -315,7 +315,10 @@ $album_view = function($set,$image = null) use ($app) {
         }
     }
 
-    return $app['twig']->render('set.html',array('set'=>$photos['photoset']));
+    return $app['twig']->render('set.html', array(
+        'conf' => $app['conf'],
+        'set' => $photos['photoset'])
+    );
 };
 
 // Route - album view
