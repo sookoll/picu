@@ -276,21 +276,21 @@ $album_view = function($set,$image = null) use ($app) {
             // landscape
             if(!$portrait){
                 $photo['th_h'] = $app['conf']['th_size'];
-                $photo['th_w'] = ($app['conf']['th_size'] * $width_o) / $height_o;
+                $photo['th_w'] = round(($app['conf']['th_size'] * $width_o) / $height_o);
                 $photo['th_mt'] = 0;
-                $photo['th_ml'] = -(($photo['th_w'] - $app['conf']['th_size'])/2);
+                $photo['th_ml'] = -round(($photo['th_w'] - $app['conf']['th_size'])/2);
             }
             // portrait
             else {
                 $photo['th_w'] = $app['conf']['th_size'];
                 if ($width_o > $height_o) {
-                    $photo['th_h'] = ($app['conf']['th_size'] * $width_o) / $height_o;
+                    $photo['th_h'] = round(($app['conf']['th_size'] * $width_o) / $height_o);
                 } else {
-                    $photo['th_h'] = ($app['conf']['th_size'] * $height_o) / $width_o;
+                    $photo['th_h'] = round(($app['conf']['th_size'] * $height_o) / $width_o);
                 }
 
                 $photo['th_ml'] = 0;
-                $photo['th_mt'] = -(($photo['th_h'] - $app['conf']['th_size'])/2);
+                $photo['th_mt'] = -round(($photo['th_h'] - $app['conf']['th_size'])/2);
             }
             // fallbacks
             $photo['url_vb'] = isset($photo['url_'.$app['conf']['vb_size']]) ? $photo['url_'.$app['conf']['vb_size']] : $photo['url_o'];
@@ -346,6 +346,7 @@ $app->get('/p/{set}/{photo}', function($set, $photo) use ($app) {
     foreach($photoset['photo'] as $k => $v){
         if($v['id'] == $photo){
             $p = $v;
+            $photoset['thumbnail'] = $v;
             break;
         }
     }

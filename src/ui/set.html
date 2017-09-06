@@ -32,9 +32,11 @@
                     data-img-download="{{ app.request.baseUrl }}/d/{{ set.id }}/{{ photo.id }}"
                     data-img-full="{{ app.request.baseUrl }}/a/{{ set.id }}/{{ photo.id }}/fs"
                     width="{{ photo.th_w }}"
-                    height:"{{ photo.th_h }}"
+                    height="{{ photo.th_h }}"
+                    alt="{{ photo.title }}"
                     src="http://placehold.it/{{ photo.th_w }}x{{ photo.th_h}}/111111/111111"
                 />
+                <!--src="http://placehold.it/{{ photo.th_w }}x{{ photo.th_h}}/111111/111111"-->
                 <div class="caption hidden">
                     {{ photo.title }}
                     <!--<a href="{{ app.request.baseUrl }}/p/{{ set.id }}/{{ photo.id }}" class="link" title="Otseviide"><i class="glyphicon glyphicon-link"></i></a>
