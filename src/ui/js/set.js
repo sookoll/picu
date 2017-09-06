@@ -230,15 +230,13 @@ ViewBox.prototype = {
         rowHeight: 250,
         maxRowHeight: 500,
         margins: 4
-    });
-    $("#set .thumbs .caption").removeClass('hidden');
-
-    /*setTimeout(function () {
+    }).on('jg.resize', function (e) {
         $('img.lazy').lazyload({
             threshold : 200,
             effect : 'fadeIn'
         });
-    }, 1500);*/
+    });
+    $("#set .thumbs .caption").removeClass('hidden');
 
     // ViewBox
     var vb = new ViewBox();
