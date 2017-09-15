@@ -232,17 +232,17 @@ ViewBox.prototype = {
         margins: 4,
         waitThumbnailsLoad: false
     }).on('jg.complete', function (e) {
-		$('img.lazy').lazyload({
+        $('img.lazy').lazyload({
             threshold : 200,
             effect : 'fadeIn'
         });
     }).on('jg.resize', function (e) {
-		$('img.lazy').lazyload({
+        $('img.lazy').lazyload({
             threshold : 200,
             effect : 'fadeIn'
         });
     });
-	
+
     $("#set .thumbs .caption").removeClass('hidden');
 
     // ViewBox
