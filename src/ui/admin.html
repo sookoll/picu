@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="utf-8">
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="{{ app.request.baseUrl }}/vendor/jQuery-File-Upload-9.12.1/css/jquery.fileupload.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="{{ app.request.baseUrl }}/lib/jQuery-File-Upload-9.12.1/css/jquery.fileupload.css" media="screen" />
     <link rel="stylesheet" type="text/css" href="{{ app.request.baseUrl }}/ui/css/style.css" media="screen" />
 </head>
 <body id="admin">
@@ -16,6 +16,13 @@
         </div>
         <div class="col-xs-6 text-right">
             <span>{{ user.username }}</span>
+            {% if google %}
+            <div class="btn-group">
+                <a href="{{ app.request.baseUrl }}/admin/googleToken" class="btn btn-primary">
+                    <i class="glyphicon glyphicon-log-in"></i>
+                </a>
+            </div>
+            {% endif %}
             <div class="btn-group">
                 <a href="{{ app.request.baseUrl }}/clear-cache" class="clear-cache gallery btn btn-success" title="Tühjenda galerii puhver">
                     <i class="glyphicon glyphicon-trash"></i>
@@ -35,7 +42,7 @@
     <section>
         <div class="col-md-12">
             <ul>
-                {% for set in sets %}
+                {% for set in sets.flickr %}
                 <li>
                     <div class="pull-left">
                         <a href="{{ app.request.baseUrl }}/a/{{ set.id }}/" target="_blank">
@@ -62,12 +69,39 @@
                     <div class="bar"></div>
                 </li>
                 {% endfor %}
+                {% for set in sets.google %}
+                <li>
+                    <div class="pull-left">
+                        <a href="{{ app.request.baseUrl }}/a/{{ set.id }}/" target="_blank">
+                            <img src="{{ set.coverPhotoBaseUrl }}" title="{{ set.title }}" />
+                        </a>
+                    </div>
+                    <div class="pull-left">
+                        <h3>{{ set.title }}</h3>
+                        <div class="tools">
+                            <a href="{{ app.request.baseUrl }}/a/{{ set.id }}/" target="_blank">
+                                <i class="glyphicon glyphicon-new-window"></i>
+                            </a>
+                            <a href="{{ app.request.baseUrl }}/upload/{{ set.id }}" class="fileupload fileinput-button" title="Lae pilte juurde">
+                                <i class="glyphicon glyphicon-open"></i>
+                                <input type="file" name="files[]" accept="image/*" multiple />
+                            </a>
+                            <a href="{{ app.request.baseUrl }}/clear-cache/{{ set.id }}" class="clear-cache text-danger" title="Tühjenda albumi puhver">
+                                <i class="glyphicon glyphicon-trash"></i>
+                            </a>
+                            <span>{{ set.mediaItemsCount }}</span>
+                        </div>
+                    </div>
+                    <div class="clearfix"></div>
+                    <div class="bar"></div>
+                </li>
+                {% endfor %}
             </ul>
         </div>
     </section>
-    <script src="{{ app.request.baseUrl }}/vendor/jquery/jquery-2.1.1.min.js" type="text/javascript"></script>
-    <script src="{{ app.request.baseUrl }}/vendor/jQuery-File-Upload-9.12.1/js/vendor/jquery.ui.widget.js" type="text/javascript"></script>
-    <script src="{{ app.request.baseUrl }}/vendor/jQuery-File-Upload-9.12.1/js/jquery.fileupload.js" type="text/javascript"></script>
+    <script src="{{ app.request.baseUrl }}/lib/jquery/jquery-2.1.1.min.js" type="text/javascript"></script>
+    <script src="{{ app.request.baseUrl }}/lib/jQuery-File-Upload-9.12.1/js/vendor/jquery.ui.widget.js" type="text/javascript"></script>
+    <script src="{{ app.request.baseUrl }}/lib/jQuery-File-Upload-9.12.1/js/jquery.fileupload.js" type="text/javascript"></script>
     <script src="{{ app.request.baseUrl }}/ui/js/admin.js" type="text/javascript"></script>
 </body>
 </html>

@@ -11,6 +11,9 @@ require_once __DIR__.'/config.php';
 // Add autoloader
 require_once __DIR__.'/vendor/autoload.php';
 
+require_once __DIR__.'/providers/flickr.php';
+require_once __DIR__.'/providers/google.php';
+
 // Namespaces
 use Silex\Provider\MonologServiceProvider;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,6 +28,7 @@ $app = new Silex\Application();
 
 // config
 $app['conf'] = $conf;
+$app['basePath'] = __DIR__;
 $app['debug'] = $app['conf']['log_level'] == 'DEBUG' ? true : false;
 
 
@@ -48,9 +52,9 @@ $app->register(new Silex\Provider\UrlGeneratorServiceProvider());
 
 // Error handling
 $app->error(function (\Exception $e, $code) use ($app) {
-    if ($app['debug'])
+    if ($app['debug']) {
         return;
-
+    }
     switch ($code) {
         // 404 page
         case 404:
@@ -63,6 +67,10 @@ $app->error(function (\Exception $e, $code) use ($app) {
     }
     return new Response($message);
 });
+
+// Providers
+$flickr = new FlickrProvider($app, $app['conf']['providers']['flickr']);
+$google = new GoogleProvider($app, $app['conf']['providers']['google']);
 
 // Route - root
 $app->get('/', function () use ($app) {
@@ -82,60 +90,71 @@ $app->post('/login', function (Request $request) use ($app) {
 
     if ($app['conf']['user'] === $user && $app['conf']['passwd'] === $pass) {
         $app['session']->set('user', array('username' => $username));
-        return $app->redirect($app['request']->getUriForPath('/').'admin');
+        return $app->redirect($app['request']->getUriForPath('/admin'));
     }
-    return $app->redirect($app['request']->getUriForPath('/').'login');
+    return $app->redirect($app['request']->getUriForPath('/login'));
 });
 
 // Route - admin
-$app->get('/admin', function () use ($app) {
+$app->get('/admin', function () use ($app, $flickr, $google) {
     if (null === $user = $app['session']->get('user')) {
-        return $app->redirect($app['request']->getUriForPath('/').'login');
+        return $app->redirect($app['request']->getUriForPath('/login'));
     }
-
+    // create dir
+    if(!is_dir($app['conf']['cacheDir'])){
+        mkdir($app['conf']['cacheDir']);
+    }
+    // enabled service providers
+    $sets = [
+        'flickr' => [],
+        'google' => []
+    ];
     // cache or flickr api
-    if(is_file($app['conf']['cache_sets'])){
-        $sets = json_decode(file_get_contents($app['conf']['cache_sets']),true);
-    } else {
-        require_once __DIR__.'/vendor/phpflickr/phpFlickr.php';
-        $f = new phpFlickr($app['conf']['key'], $app['conf']['secret']);
-        $f->setToken($app['conf']['token']);
-
-        //change this to the permissions you will need
-        $f->auth("read");
-
-        $sets = $f->photosets_getList();
-
-        // create dir
-        if(!is_dir(__DIR__.'/_cache')){
-            mkdir(__DIR__.'/_cache');
-        }
-
-        file_put_contents($app['conf']['cache_sets'],json_encode($sets));
+    if ($flickr->isEnabled()) {
+        $sets['flickr'] = $flickr->getSets();
     }
+    // cache or google api
+    if ($google->isEnabled()) {
+        $sets['google'] = $google->getSets();
+    }
+    return $app['twig']->render('admin.html',array('sets'=>$sets,'user'=>$user,'google'=>$google->isEnabled()));
+});
 
-    return $app['twig']->render('admin.html',array('sets'=>$sets['photoset'],'user'=>$user));
+// Route - google auth
+$app->get('/admin/googleToken', function () use ($app, $google) {
+    if (null === $user = $app['session']->get('user')) {
+        return $app->redirect($app['request']->getUriForPath('/login'));
+    }
+    // cache or google api
+    if ($google->isEnabled()) {
+        return $google->auth();
+    } else {
+        return $app->redirect($app['request']->getUriForPath('/admin'));
+    }
 });
 
 // Route - logout
 $app->get('/logout', function () use ($app) {
     $app['session']->set('user', null);
-    return $app->redirect($app['request']->getUriForPath('/').'admin');
+    return $app->redirect($app['request']->getUriForPath('/admin'));
 });
 
 // Route - clear cache
-$clear_cache = function($set = null) use ($app) {
+$clear_cache = function($set = null) use ($app, $flickr, $google) {
 
     $status = 0;
     if (null === $user = $app['session']->get('user')) {
         $app->abort(404);
     }
     // delete sets file
-    if($set === null && is_file($app['conf']['cache_sets']) && unlink($app['conf']['cache_sets']))
+    if ($set === null) {
+        $flickr->clearSets();
+        $google->clearSets();
         $status = 1;
+    }
     // delete all
-    else if($set == 'all'){
-        $files = glob(__DIR__.'/_cache/*'); // get all file names
+    else if ($set == 'all') {
+        $files = glob($app['conf']['cacheDir'].'/*'); // get all file names
         foreach($files as $file){ // iterate files
             if(is_file($file) && unlink($file))
                 $status = 1;
@@ -147,9 +166,9 @@ $clear_cache = function($set = null) use ($app) {
     }
     // delete set
     else {
-        if(is_file(__DIR__.'/_cache/flickr_set_'.$set.'.json') && unlink(__DIR__.'/_cache/flickr_set_'.$set.'.json')) {
-            $status = 1;
-        }
+        $flickr->clearSets($set);
+        $google->clearSets($set);
+        $status = 1;
     }
 
     return json_encode(array(
