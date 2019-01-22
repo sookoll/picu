@@ -3,5 +3,6 @@ src/_cache/*
 src/_logs/*
 src/_tmp/*
 src/vendor
+apachelogs/
 .idea
 .DS_Store
