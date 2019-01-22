@@ -170,7 +170,6 @@ $clear_cache = function($set = null) use ($app, $flickr, $google) {
         $google->clearSets($set);
         $status = 1;
     }
-
     return json_encode(array(
         'status' => $status
     ));
@@ -180,28 +179,24 @@ $app->get('/clear-cache/{set}', $clear_cache);
 
 /**
  * Upload image
+ * TODO: google + move to flickr provider class
  */
 $app->post('/upload/{set}', function ($set) use ($app) {
     $status = 0;
     $i = 0;
-
     if ($app['conf']['upload']['anon'] === false && null === $user = $app['session']->get('user')) {
         $app->abort(404);
     }
-
     if (empty($_FILES['files']) || $_FILES['files']['error'][0] != UPLOAD_ERR_OK) {
         $app->abort(400);
     }
-
     $valid = validateUpload($_FILES['files']);
-
     if (!$valid) {
         return $app->json(array(
             'status' => $status,
             'msg' => 'Not valid'
         ));
     }
-
     require_once __DIR__.'/vendor/phpflickr/phpFlickr.php';
     $f = new phpFlickr($app['conf']['key'], $app['conf']['secret']);
     $f->setToken($app['conf']['token']);
@@ -261,83 +256,17 @@ $app->post('/upload/{set}', function ($set) use ($app) {
 })->bind('upload');
 
 // Route - album view method
-$album_view = function($set,$image = null) use ($app) {
+$album_view = function($set, $image = null) use ($app, $flickr, $google) {
     $id = $app->escape($set);
-
     // cache or flickr api
-    if(is_file(__DIR__.'/_cache/flickr_set_'.$id.'.json')){
-        $photos = json_decode(file_get_contents(__DIR__.'/_cache/flickr_set_'.$id.'.json'),true);
-        if($image !== null) {
-            foreach($photos['photoset']['photo'] as $k => $photo){
-                // thumbnail
-                if($photo['id'] == $image) {
-                    $photos['photoset']['thumbnail'] = $photo;
-                    break;
-                }
-            }
-        }
-    } else {
-        require_once __DIR__.'/vendor/phpflickr/phpFlickr.php';
-        $f = new phpFlickr($app['conf']['key'], $app['conf']['secret']);
-        $f->setToken($app['conf']['token']);
-
-        //change this to the permissions you will need
-        $f->auth("read");
-        $photos = $f->photosets_getPhotos($id, 'date_taken, geo, tags, url_o, url_'.$app['conf']['vb_size'].', url_z, url_c');
-        if(!isset($photos) || !isset($photos['photoset']) || !isset($photos['photoset']['photo']))
-            $app->abort(404);
-        // calculate thumb parameters, originals are wrong in portrait
-        foreach($photos['photoset']['photo'] as $k => $photo){
-            $width_o = (int) $photo['width_o'];
-            $height_o = (int) $photo['height_o'];
-            $portrait = ((isset($photo['height_z']) && (int) $photo['height_z'] > (int) $photo['width_z']) || ($height_o > $width_o));
-
-            // landscape
-            if(!$portrait){
-                $photo['th_h'] = $app['conf']['th_size'];
-                $photo['th_w'] = round(($app['conf']['th_size'] * $width_o) / $height_o);
-                $photo['th_mt'] = 0;
-                $photo['th_ml'] = -round(($photo['th_w'] - $app['conf']['th_size'])/2);
-            }
-            // portrait
-            else {
-                $photo['th_w'] = $app['conf']['th_size'];
-                if ($width_o > $height_o) {
-                    $photo['th_h'] = round(($app['conf']['th_size'] * $width_o) / $height_o);
-                } else {
-                    $photo['th_h'] = round(($app['conf']['th_size'] * $height_o) / $width_o);
-                }
-
-                $photo['th_ml'] = 0;
-                $photo['th_mt'] = -round(($photo['th_h'] - $app['conf']['th_size'])/2);
-            }
-            // fallbacks
-            $photo['url_vb'] = isset($photo['url_'.$app['conf']['vb_size']]) ? $photo['url_'.$app['conf']['vb_size']] : $photo['url_o'];
-            $photo['url_z'] = isset($photo['url_z']) ? $photo['url_z'] : $photo['url_o'];
-            $photo['width_vb'] = isset($photo['width_'.$app['conf']['vb_size']]) ? $photo['width_'.$app['conf']['vb_size']] : $width_o;
-            $photo['height_vb'] = isset($photo['height_'.$app['conf']['vb_size']]) ? $photo['height_'.$app['conf']['vb_size']] : $height_o;
-            $photos['photoset']['photo'][$k] = $photo;
-            // thumbnail
-            if($photo['id'] == $photos['photoset']['primary']) {
-                $photos['photoset']['thumbnail'] = $photo;
-            }
-        }
-        file_put_contents(__DIR__.'/_cache/flickr_set_'.$id.'.json',json_encode($photos));
-        if($image !== null) {
-            foreach($photos['photoset']['photo'] as $k => $photo){
-                // thumbnail
-                if($photo['id'] == $image) {
-                    $photos['photoset']['thumbnail'] = $photo;
-                    break;
-                }
-            }
-        }
-    }
-
+    $isFlickrSet = $flickr->isSet($id);
+    $isGoogleSet = $google->isSet($id);
+    $provider = $isFlickrSet ? $flickr : $google;
+    $photoset = $provider->getMedia($id, $image);
     return $app['twig']->render('set.html', array(
         'conf' => $app['conf'],
-        'set' => $photos['photoset'])
-    );
+        'set' => $photoset
+    ));
 };
 
 // Route - album view
@@ -451,7 +380,6 @@ function validateUpload($files) {
     $i = 0;
 
     do {
-
         // file type
         if (!preg_match($app['conf']['upload']['accept_file_types'], $files['name'][$i])) {
             $app['monolog']->addError("Validate::accept_file_types[$i]: " . json_encode(preg_match($app['conf']['upload']['accept_file_types'], $files['name'][$i])));
