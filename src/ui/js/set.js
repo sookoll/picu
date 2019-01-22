@@ -231,13 +231,18 @@ ViewBox.prototype = {
         maxRowHeight: 500,
         margins: 4,
         waitThumbnailsLoad: false
-    });
-    $('#set .thumbs').justifiedGallery().on('jg.complete', function (e) {
+    }).on('jg.complete', function (e) {
+        $('img.lazy').lazyload({
+            threshold : 200,
+            effect : 'fadeIn'
+        });
+    }).on('jg.resize', function (e) {
         $('img.lazy').lazyload({
             threshold : 200,
             effect : 'fadeIn'
         });
     });
+
     $("#set .thumbs .caption").removeClass('hidden');
 
     // ViewBox
