@@ -2,6 +2,7 @@ src/config.php
 src/_cache/*
 src/_logs/*
 src/_tmp/*
+src/_secret/*
 src/vendor
 apachelogs/
 .idea

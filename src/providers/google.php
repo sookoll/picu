@@ -16,42 +16,39 @@ class GoogleProvider {
     }
     function isEnabled() {
         return $this->conf['enabled'];
+
     }
     function checkCredentials() {
         if ($this->app['session']->get('googleCredentials')) {
             return true;
-        } else {
-            $refreshToken = null;
-            if (is_file($this->conf['tokenFile'])) {
-                $refreshToken = json_decode(file_get_contents($this->conf['tokenFile']), true);
-            }
-            if ($refreshToken) {
-                $this->refreshCredentials($refreshToken['token']);
-                if ($this->app['session']->get('googleCredentials')) {
-                    return true;
-                }
-            }
         }
         return false;
     }
-    function refreshCredentials($refreshToken) {
-        $this->app['session']->set('googleCredentials', new UserRefreshCredentials(
-            [
-                $this->conf['auth_scope_url']
-            ], [
-                'client_id' => $this->conf['client_id'],
-                'client_secret' => $this->conf['secret'],
-                'refresh_token' => $refreshToken
-            ]
-        ));
+    function refreshCredentials($refreshToken = null) {
+        // check if we have tokens stored
+        if ($refreshToken === null && is_file($this->conf['tokenFile'])) {
+            $token = json_decode(file_get_contents($this->conf['tokenFile']), true);
+            $refreshToken = $token['access_token'];
+            //$refreshToken = $token['refresh_token'];
+        }
+        if ($refreshToken) {
+            $this->app['session']->set('googleCredentials', new UserRefreshCredentials(
+                [$this->conf['auth_scope_url']],
+                [
+                    'client_id' => $this->conf['client_id'],
+                    'client_secret' => $this->conf['secret'],
+                    'refresh_token' => $refreshToken
+                ]
+            ));
+            return true;
+        }
+        return false;
     }
     function auth() {
         $oauth2 = new OAuth2([
             'clientId' => $this->conf['client_id'],
             'clientSecret' => $this->conf['secret'],
             'authorizationUri' => $this->conf['authorization_url'],
-            // Where to return the user to if they accept your request to access their account.
-            // You must authorize this URI in the Google API Console.
             'redirectUri' => $this->conf['auth_redirect_url'],
             'tokenCredentialUri' => $this->conf['auth_token_url'],
             'scope' => [$this->conf['auth_scope_url']],
@@ -65,9 +62,10 @@ class GoogleProvider {
             $oauth2->setCode($_GET['code']);
             $authToken = $oauth2->fetchAuthToken();
             $refreshToken = $authToken['access_token'];
+            //$refreshToken = $authToken['refresh_token'];
             // store token for permanent access
-            file_put_contents($this->conf['tokenFile'], json_encode(['token' => $refreshToken]));
-            $this->app['monolog']->addDebug("Store google auth token: " . json_encode(['token' => $refreshToken]));
+            file_put_contents($this->conf['tokenFile'], json_encode($authToken));
+            $this->app['monolog']->addDebug("Store google auth token: " . json_encode($authToken));
             // The UserRefreshCredentials will use the refresh token to 'refresh' the credentials when
             // they expire.
             $this->refreshCredentials($refreshToken);
@@ -92,12 +90,12 @@ class GoogleProvider {
         $sets = [
             'photoset' => []
         ];
+        if (!$this->checkCredentials() && !$this->refreshCredentials()) {
+            return $sets['photoset'];
+        }
         if (is_file($this->conf['cache_sets'])) {
             $sets = json_decode(file_get_contents($this->conf['cache_sets']), true);
         } else {
-            if (!$this->checkCredentials()) {
-                return $this->app->abort(404);
-            }
             $photosLibraryClient = new PhotosLibraryClient(['credentials' => $this->app['session']->get('googleCredentials')]);
             try {
                 $response = $photosLibraryClient->listAlbums();
@@ -133,12 +131,12 @@ class GoogleProvider {
                 'thumbnail' => null
             ]
         ];
+        if (!$this->checkCredentials() && !$this->refreshCredentials()) {
+            return $this->app->abort(404);
+        }
         if(is_file($this->conf['cache_set'].$set.'.json')){
             $photos = json_decode(file_get_contents($this->conf['cache_set'].$set.'.json'),true);
         } else {
-            if (!$this->checkCredentials()) {
-                return $this->app->abort(404);
-            }
             $photosLibraryClient = new PhotosLibraryClient(['credentials' => $this->app['session']->get('googleCredentials')]);
             try {
                 $album = $photosLibraryClient->getAlbum($set);
@@ -214,7 +212,7 @@ class GoogleProvider {
         return $photos['photoset'];
     }
     function createSet($photoset) {
-        if (!$this->checkCredentials()) {
+        if (!$this->checkCredentials() && !$this->refreshCredentials()) {
             return $this->app->abort(404);
         }
         $photosLibraryClient = new PhotosLibraryClient(['credentials' => $this->app['session']->get('googleCredentials')]);

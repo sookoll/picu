@@ -11,6 +11,7 @@ $conf = [
     'user' => '',
     'passwd' => '',
     'cacheDir' => __DIR__.'/_cache',
+    'secretDir' => __DIR__.'/_secret',
     'providers' => [
         'flickr' => [
             'enabled' => true,

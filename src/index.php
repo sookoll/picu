@@ -91,7 +91,7 @@ $app->post('/login', function (Request $request) use ($app) {
     $user = $app->escape($request->get('user_id'));
     $pass = $app->escape($request->get('user_pwd'));
     if ($app['conf']['user'] === $user && $app['conf']['passwd'] === $pass) {
-        $app['session']->set('user', array('username' => $username));
+        $app['session']->set('user', array('username' => $user));
         return $app->redirect($app['request']->getUriForPath('/admin'));
     }
     return $app->redirect($app['request']->getUriForPath('/login'));
@@ -105,6 +105,9 @@ $app->get('/admin', function () use ($app, $providers) {
     // create dir
     if(!is_dir($app['conf']['cacheDir'])){
         mkdir($app['conf']['cacheDir']);
+    }
+    if(!is_dir($app['conf']['secretDir'])){
+        mkdir($app['conf']['secretDir']);
     }
     // enabled service providers
     $sets = [
@@ -128,11 +131,11 @@ $app->get('/admin', function () use ($app, $providers) {
 
 // Route - google auth
 $app->get('/admin/googleToken', function () use ($app, $providers) {
-    if (null === $user = $app['session']->get('user')) {
+    if (null === $app['session']->get('user')) {
         return $app->redirect($app['request']->getUriForPath('/login'));
     }
     // cache or google api
-    if ($providers['google']->isEnabled()) {
+    if ($providers['google']->isEnabled() && !$providers['google']->checkCredentials()) {
         return $providers['google']->auth();
     } else {
         return $app->redirect($app['request']->getUriForPath('/admin'));
