@@ -3,7 +3,6 @@
 use Google\Auth\Credentials\UserRefreshCredentials;
 use Google\Auth\OAuth2;
 use Google\Photos\Library\V1\PhotosLibraryClient;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class GoogleProvider {
 
@@ -17,8 +16,30 @@ class GoogleProvider {
     function checkCredentials() {
         if ($this->app['session']->get('googleCredentials')) {
             return true;
+        } else {
+            $refreshToken = null;
+            if (is_file($this->conf['tokenFile'])) {
+                $refreshToken = json_decode(file_get_contents($this->conf['tokenFile']), true);
+            }
+            if ($refreshToken) {
+                $this->refreshCredentials($refreshToken['token']);
+                if ($this->app['session']->get('googleCredentials')) {
+                    return true;
+                }
+            }
         }
         return false;
+    }
+    function refreshCredentials($refreshToken) {
+        $this->app['session']->set('googleCredentials', new UserRefreshCredentials(
+            [
+                $this->conf['auth_scope_url']
+            ], [
+                'client_id' => $this->conf['client_id'],
+                'client_secret' => $this->conf['secret'],
+                'refresh_token' => $refreshToken
+            ]
+        ));
     }
     function auth() {
         $oauth2 = new OAuth2([
@@ -34,26 +55,17 @@ class GoogleProvider {
         // The authorization URI will, upon redirecting, return a parameter called code.
         if (!isset($_GET['code'])) {
             $authenticationUrl = $oauth2->buildFullAuthorizationUri(['access_type' => 'offline']);
-            //header('Location: ' . $authenticationUrl);
-            $this->app['monolog']->addError("Error: " . $authenticationUrl);
-            return $this->app->redirect('' . $authenticationUrl);
-            //return new RedirectResponse('http://your.location.com');
+            return $this->app->redirect('' . $authenticationUrl);// for some reason it won't redirect correctly without
         } else {
             // With the code returned by the OAuth flow, we can retrieve the refresh token.
             $oauth2->setCode($_GET['code']);
             $authToken = $oauth2->fetchAuthToken();
             $refreshToken = $authToken['access_token'];
+            // store token for permanent access
+            file_put_contents($this->conf['tokenFile'], json_encode(['token' => $refreshToken]));
             // The UserRefreshCredentials will use the refresh token to 'refresh' the credentials when
             // they expire.
-            $this->app['session']->set('googleCredentials', new UserRefreshCredentials(
-                [
-                    $this->conf['auth_scope_url']
-                ], [
-                    'client_id' => $this->conf['client_id'],
-                    'client_secret' => $this->conf['secret'],
-                    'refresh_token' => $refreshToken
-                ]
-            ));
+            $this->refreshCredentials($refreshToken);
             // Return the user to the home page.
             return $this->app->redirect($this->app['request']->getUriForPath('/admin'));
         }
@@ -142,7 +154,9 @@ class GoogleProvider {
                         'datetaken' => $item->getMediaMetadata()->getCreationTime(),
                         'url_o' => $item->getBaseUrl() . '=w' . $width_o,
                         'height_o' => $height_o,
-                        'width_o' => $width_o
+                        'width_o' => $width_o,
+                        'width_c' => round((800 * $width_o) / $height_o),
+                        'height_c' => 800
                     ];
                     // landscape
                     if (!$portrait){
@@ -150,8 +164,7 @@ class GoogleProvider {
                         $photo['th_w'] = round(($this->conf['th_size'] * $width_o) / $height_o);
                         $photo['th_mt'] = 0;
                         $photo['th_ml'] = -round(($photo['th_w'] - $this->conf['th_size'])/2);
-                        $photo['width_c'] = round((800 * $height_o) / $width_o);
-                        $photo['height_c'] = 800;
+
                     }
                     // portrait
                     else {
@@ -163,8 +176,6 @@ class GoogleProvider {
                         }
                         $photo['th_ml'] = 0;
                         $photo['th_mt'] = -round(($photo['th_h'] - $this->conf['th_size'])/2);
-                        $photo['width_c'] = 800;
-                        $photo['height_c'] = round((800 * $width_o) / $height_o);
                     }
                     // fallbacks
                     $photo['url_vb'] = $item->getBaseUrl() . '=w' . $this->conf['vb_size'];
