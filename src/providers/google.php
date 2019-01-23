@@ -1,8 +1,12 @@
 <?php
 
+require_once __DIR__.'/../curlDownload.php';
+
 use Google\Auth\Credentials\UserRefreshCredentials;
 use Google\Auth\OAuth2;
 use Google\Photos\Library\V1\PhotosLibraryClient;
+use Google\Photos\Library\V1\Album;
+use Google\Rpc\Code;
 
 class GoogleProvider {
 
@@ -63,6 +67,7 @@ class GoogleProvider {
             $refreshToken = $authToken['access_token'];
             // store token for permanent access
             file_put_contents($this->conf['tokenFile'], json_encode(['token' => $refreshToken]));
+            $this->app['monolog']->addDebug("Store google auth token: " . json_encode(['token' => $refreshToken]));
             // The UserRefreshCredentials will use the refresh token to 'refresh' the credentials when
             // they expire.
             $this->refreshCredentials($refreshToken);
@@ -91,7 +96,7 @@ class GoogleProvider {
             $sets = json_decode(file_get_contents($this->conf['cache_sets']), true);
         } else {
             if (!$this->checkCredentials()) {
-                return $this->app->redirect($this->app['request']->getUriForPath('/admin/googleToken'));
+                return $this->app->abort(404);
             }
             $photosLibraryClient = new PhotosLibraryClient(['credentials' => $this->app['session']->get('googleCredentials')]);
             try {
@@ -132,7 +137,7 @@ class GoogleProvider {
             $photos = json_decode(file_get_contents($this->conf['cache_set'].$set.'.json'),true);
         } else {
             if (!$this->checkCredentials()) {
-                return $this->app->redirect($this->app['request']->getUriForPath('/admin/googleToken'));
+                return $this->app->abort(404);
             }
             $photosLibraryClient = new PhotosLibraryClient(['credentials' => $this->app['session']->get('googleCredentials')]);
             try {
@@ -207,5 +212,43 @@ class GoogleProvider {
             }
         }
         return $photos['photoset'];
+    }
+    function createSet($photoset) {
+        if (!$this->checkCredentials()) {
+            return $this->app->abort(404);
+        }
+        $photosLibraryClient = new PhotosLibraryClient(['credentials' => $this->app['session']->get('googleCredentials')]);
+        $newAlbum = new Album();
+        $newAlbum->setTitle($photoset['title']);
+        try {
+            $createdAlbum = $photosLibraryClient->createAlbum($newAlbum);
+            $albumId = $createdAlbum->getId();
+            $newMediaItems = [];
+            for ($i = 0; $i < $photoset['total']; $i++) {
+                $photo = curl_download($src);
+                $ext = pathinfo($photoset['photo'][$i]['url_o'], PATHINFO_EXTENSION);
+                $name = $photoset['photo'][$i]['title'].'.'.$ext;
+                $uploadToken = $photosLibraryClient->upload($photo, $name);
+                $newMediaItems[] = PhotosLibraryResourceFactory::newMediaItem($uploadToken);
+            }
+            $batchCreateResponse = $photosLibraryClient->batchCreateMediaItems($newMediaItems, ['albumId' => $albumId]);
+        } catch (\Google\ApiCore\ApiException $e) {
+            $this->app['monolog']->addError("Error (google): " . json_encode($e));
+            return $this->app->abort(404);
+        }
+        // An OK status (i.e., an exception wasn't thrown above) isn't sufficient to say all the items
+        // succeeded. You also need to check the status in each NewMediaItemResult.s
+        $statuses = [];
+        foreach ($batchCreateResponse->getNewMediaItemResults() as $itemResult) {
+            $status = $itemResult->getStatus();
+            if ($status->getCode() != Code::OK) {
+                $statuses[] = $status;
+            }
+        }
+        if (count($statuses) === 0) {
+            return true;
+        }
+        $this->app['monolog']->addError("Error (google): " . json_encode($statuses));
+        return false;
     }
 }

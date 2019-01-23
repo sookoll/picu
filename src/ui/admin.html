@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="utf-8">
-    <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{{ app.request.baseUrl }}/lib/jQuery-File-Upload-9.12.1/css/jquery.fileupload.css" media="screen" />
     <link rel="stylesheet" type="text/css" href="{{ app.request.baseUrl }}/ui/css/style.css" media="screen" />
 </head>
@@ -16,19 +16,25 @@
         </div>
         <div class="col-xs-6 text-right">
             <span>{{ user.username }}</span>
-            {% if google %}
+            {% if google.enabled %}
             <div class="btn-group">
-                <a href="{{ app.request.baseUrl }}/admin/googleToken" class="btn btn-primary" title="Google autentimine">
-                    <i class="glyphicon glyphicon-log-in"> Google</i>
+                {% if google.auth %}
+                <a href="{{ app.request.baseUrl }}/admin" class="btn btn-success" title="Google autentimine">
+                    <i class="glyphicon glyphicon-check"></i> Google
                 </a>
+                {% else %}
+                <a href="{{ app.request.baseUrl }}/admin/googleToken" class="btn btn-primary" title="Google autentimine">
+                    <i class="glyphicon glyphicon-log-in"></i> Google
+                </a>
+                {% endif %}
             </div>
             {% endif %}
             <div class="btn-group">
-                <a href="{{ app.request.baseUrl }}/clear-cache" class="clear-cache gallery btn btn-success" title="Tühjenda galerii puhver">
-                    <i class="glyphicon glyphicon-trash"></i>
+                <a href="{{ app.request.baseUrl }}/clear-cache" class="clear-cache gallery btn btn-warning" title="Süngi galerii puhver">
+                    <i class="glyphicon glyphicon-repeat"></i>
                 </a>
-                <a href="{{ app.request.baseUrl }}/clear-cache/all" class="clear-cache btn btn-warning" title="Tühjenda kogu puhver">
-                    <i class="glyphicon glyphicon-trash"></i>
+                <a href="{{ app.request.baseUrl }}/clear-cache/all" class="clear-cache btn btn-danger" title="Süngi kogu puhver">
+                    <i class="glyphicon glyphicon-repeat"></i>
                 </a>
             </div>
             <div class="btn-group">
@@ -59,8 +65,11 @@
                                 <i class="glyphicon glyphicon-open"></i>
                                 <input type="file" name="files[]" accept="image/*" multiple />
                             </a>
-                            <a href="{{ app.request.baseUrl }}/clear-cache/{{ set.id }}" class="clear-cache text-danger" title="Tühjenda albumi puhver">
-                                <i class="glyphicon glyphicon-trash"></i>
+                            <a href="{{ app.request.baseUrl }}/clear-cache/{{ set.id }}" class="clear-cache text-warning" title="Süngi albumi puhver">
+                                <i class="glyphicon glyphicon-repeat"></i>
+                            </a>
+                            <a href="{{ app.request.baseUrl }}/admin/copyTo/{{ set.id }}/flickr/google" class="change-provider text-danger" title="Tee koopia Google teenusesse">
+                                <i class="glyphicon glyphicon-duplicate"></i>
                             </a>
                             <span>{{ set.photos }}</span>
                             <span>FLICKR</span>
@@ -87,8 +96,8 @@
                                 <i class="glyphicon glyphicon-open"></i>
                                 <input type="file" name="files[]" accept="image/*" multiple />
                             </a>
-                            <a href="{{ app.request.baseUrl }}/clear-cache/{{ set.id }}" class="clear-cache text-danger" title="Tühjenda albumi puhver">
-                                <i class="glyphicon glyphicon-trash"></i>
+                            <a href="{{ app.request.baseUrl }}/clear-cache/{{ set.id }}" class="clear-cache text-danger" title="Süngi albumi puhver">
+                                <i class="glyphicon glyphicon-repeat"></i>
                             </a>
                             <span>{{ set.total }}</span>
                             <span>GOOGLE PHOTOS</span>

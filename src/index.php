@@ -14,6 +14,8 @@ require_once __DIR__.'/vendor/autoload.php';
 require_once __DIR__.'/providers/flickr.php';
 require_once __DIR__.'/providers/google.php';
 
+require_once __DIR__.'/curlDownload.php';
+
 // Namespaces
 use Silex\Provider\MonologServiceProvider;
 use Symfony\Component\HttpFoundation\Request;
@@ -69,8 +71,10 @@ $app->error(function (\Exception $e, $code) use ($app) {
 });
 
 // Providers
-$flickr = new FlickrProvider($app, $app['conf']['providers']['flickr']);
-$google = new GoogleProvider($app, $app['conf']['providers']['google']);
+$providers = [
+    'flickr' => new FlickrProvider($app, $app['conf']['providers']['flickr']),
+    'google' => new GoogleProvider($app, $app['conf']['providers']['google'])
+];
 
 // Route - root
 $app->get('/', function () use ($app) {
@@ -94,7 +98,7 @@ $app->post('/login', function (Request $request) use ($app) {
 });
 
 // Route - admin
-$app->get('/admin', function () use ($app, $flickr, $google) {
+$app->get('/admin', function () use ($app, $providers) {
     if (null === $user = $app['session']->get('user')) {
         return $app->redirect($app['request']->getUriForPath('/login'));
     }
@@ -107,25 +111,29 @@ $app->get('/admin', function () use ($app, $flickr, $google) {
         'flickr' => [],
         'google' => []
     ];
-    // cache or flickr api
-    if ($flickr->isEnabled()) {
-        $sets['flickr'] = $flickr->getSets();
+    foreach ($providers as $key => $provider) {
+        if ($provider->isEnabled()) {
+            $sets[$key] = $provider->getSets();
+        }
     }
-    // cache or google api
-    if ($google->isEnabled()) {
-        $sets['google'] = $google->getSets();
-    }
-    return $app['twig']->render('admin.html',array('sets'=>$sets,'user'=>$user,'google'=>$google->isEnabled()));
+    return $app['twig']->render('admin.html',array(
+        'sets' => $sets,
+        'user' => $user,
+        'google' => [
+            'enabled' => $providers['google']->isEnabled(),
+            'auth' => $providers['google']->checkCredentials()
+        ]
+    ));
 });
 
 // Route - google auth
-$app->get('/admin/googleToken', function () use ($app, $google) {
+$app->get('/admin/googleToken', function () use ($app, $providers) {
     if (null === $user = $app['session']->get('user')) {
         return $app->redirect($app['request']->getUriForPath('/login'));
     }
     // cache or google api
-    if ($google->isEnabled()) {
-        return $google->auth();
+    if ($providers['google']->isEnabled()) {
+        return $providers['google']->auth();
     } else {
         return $app->redirect($app['request']->getUriForPath('/admin'));
     }
@@ -138,15 +146,16 @@ $app->get('/logout', function () use ($app) {
 });
 
 // Route - clear cache
-$clear_cache = function($set = null) use ($app, $flickr, $google) {
+$clear_cache = function($set = null) use ($app, $providers) {
     $status = 0;
     if (null === $user = $app['session']->get('user')) {
-        $app->abort(404);
+        return $app->abort(404);
     }
     // delete sets file
     if ($set === null) {
-        $flickr->clearSets();
-        $google->clearSets();
+        foreach ($providers as $key => $provider) {
+            $provider->clearSets();
+        }
         $status = 1;
     }
     // delete all
@@ -163,8 +172,9 @@ $clear_cache = function($set = null) use ($app, $flickr, $google) {
     }
     // delete set
     else {
-        $flickr->clearSets($set);
-        $google->clearSets($set);
+        foreach ($providers as $key => $provider) {
+            $provider->clearSets($set);
+        }
         $status = 1;
     }
     return json_encode(array(
@@ -173,6 +183,23 @@ $clear_cache = function($set = null) use ($app, $flickr, $google) {
 };
 $app->get('/clear-cache', $clear_cache);
 $app->get('/clear-cache/{set}', $clear_cache);
+
+// Route - change provider
+$app->get('/admin/copyTo/{set}/{from}/{to}', function ($set, $from, $to) use ($app, $providers) {
+    if (null === $app['session']->get('user') || !array_key_exists($from, $providers) || !array_key_exists($to, $providers)) {
+        $app['monolog']->addError("Error: $set $from $to ");
+        return $app->abort(404);
+    }
+    $set = $app->escape($set);
+    $photoset = $providers[$from]->getMedia($set, null);
+    $success = $providers[$to]->createSet($photoset);
+    if ($success) {
+        return $clear_cache('all');
+    }
+    return json_encode(array(
+        'status' => 0
+    ));
+});
 
 /**
  * Upload image
@@ -253,13 +280,20 @@ $app->post('/upload/{set}', function ($set) use ($app) {
 })->bind('upload');
 
 // Route - album view method
-$album_view = function($set, $image = null) use ($app, $flickr, $google) {
+$album_view = function($set, $image = null) use ($app, $providers) {
     $set = $app->escape($set);
-    $isFlickrSet = $flickr->setExists($set);
-    $isGoogleSet = $google->setExists($set);
-    if ($isFlickrSet || $isGoogleSet) {
-        $provider = $isFlickrSet ? $flickr : $google;
+    $provider = null;
+    foreach ($providers as $key => $pr) {
+        if ($pr->setExists($set)) {
+            $provider = $pr;
+            break;
+        }
+    }
+    if ($provider) {
         $photoset = $provider->getMedia($set, $image);
+        if (!$photoset) {
+            $app->abort(404);
+        }
         return $app['twig']->render('set.html', array(
             'conf' => $app['conf'],
             'set' => $photoset
@@ -274,13 +308,17 @@ $app->get('/a/{set}/{image}', $album_view);
 //$app->get('/a/{set}/{photo}/fs', $album_view);
 
 // Route - picture-only view
-$app->get('/p/{set}/{photo}', function($set, $photo) use ($app, $flickr, $google) {
+$app->get('/p/{set}/{photo}', function($set, $photo) use ($app, $providers) {
     $set = $app->escape($set);
     $photo = $app->escape($photo);
-    $isFlickrSet = $flickr->setExists($set);
-    $isGoogleSet = $google->setExists($set);
-    if ($isFlickrSet || $isGoogleSet) {
-        $provider = $isFlickrSet ? $flickr : $google;
+    $provider = null;
+    foreach ($providers as $key => $pr) {
+        if ($pr->setExists($set)) {
+            $provider = $pr;
+            break;
+        }
+    }
+    if ($provider) {
         $photoset = $provider->getMedia($set, $image);
         $p = null;
         foreach($photoset['photo'] as $k => $v){
@@ -298,13 +336,17 @@ $app->get('/p/{set}/{photo}', function($set, $photo) use ($app, $flickr, $google
 })->bind('photo');
 
 // Route - photo download
-$app->get('/d/{set}/{photo}', function($set, $photo) use ($app, $flickr, $google) {
+$app->get('/d/{set}/{photo}', function($set, $photo) use ($app, $providers) {
     $set = $app->escape($set);
     $photo = $app->escape($photo);
-    $isFlickrSet = $flickr->setExists($set);
-    $isGoogleSet = $google->setExists($set);
-    if ($isFlickrSet || $isGoogleSet) {
-        $provider = $isFlickrSet ? $flickr : $google;
+    $provider = null;
+    foreach ($providers as $key => $pr) {
+        if ($pr->setExists($set)) {
+            $provider = $pr;
+            break;
+        }
+    }
+    if ($provider) {
         $photoset = $provider->getMedia($set, $image);
         $src = null;
         foreach($photoset['photo'] as $k => $v){
@@ -317,75 +359,45 @@ $app->get('/d/{set}/{photo}', function($set, $photo) use ($app, $flickr, $google
             $photo = curl_download($src);
             $filename = basename($src);
             $file_extension = strtolower(substr(strrchr($filename,"."),1));
-
             switch( $file_extension ) {
                 case "gif": $ctype="image/gif"; break;
                 case "png": $ctype="image/png"; break;
                 case "jpeg":
                 case "jpg": $ctype="image/jpg"; break;
                 default:
+                    return $app->abort(404);
             }
-            $app['monolog']->addError("download : $filename $file_extension $ctype");
-            header('Content-type: ' . $ctype);
-            header('Content-Disposition: attachment; filename="'.$filename.'"');
-            return $photo;
+            $app['monolog']->addDebug("download : $filename $file_extension $ctype");
+            $response = new Response($photo[0]);
+            $response->headers->set('Content-type', $ctype);
+            $response->headers->set('Content-Disposition', 'attachment; filename="'.$filename.'"');
+            $response->headers->set('Content-length', $photo[1]);
+            return $response;
         }
     }
-    $app->abort(404);
+    return $app->abort(404);
 });
 
 $app->run();
 
-function curl_download($Url){
-    // is cURL installed yet?
-    if (!function_exists('curl_init')){
-        die('Sorry cURL is not installed!');
-    }
-    // OK cool - then let's create a new cURL resource handle
-    $ch = curl_init();
-    // Now set some options (most are optional)
-    // Set URL to download
-    curl_setopt($ch, CURLOPT_URL, $Url);
-    // Set a referer
-    curl_setopt($ch, CURLOPT_REFERER, $conf['referer']);
-    // User agent
-    curl_setopt($ch, CURLOPT_USERAGENT, "MozillaXYZ/1.0");
-    // Include header in result? (0 = yes, 1 = no)
-    curl_setopt($ch, CURLOPT_HEADER, 0);
-    // Should cURL return or print out the data? (true = return, false = print)
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    // Timeout in seconds
-    curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-    // Download the given URL, and return output
-    $output = curl_exec($ch);
-    // Close the cURL resource, and free system resources
-    curl_close($ch);
-    return $output;
-}
-
 function validateUpload($files) {
     global $app;
     $i = 0;
-
     do {
         // file type
         if (!preg_match($app['conf']['upload']['accept_file_types'], $files['name'][$i])) {
             $app['monolog']->addError("Validate::accept_file_types[$i]: " . json_encode(preg_match($app['conf']['upload']['accept_file_types'], $files['name'][$i])));
             return false;
         }
-
         // file size
         $file_size = get_file_size($files['tmp_name'][$i]);
-
         if ($file_size > $app['conf']['upload']['max_file_size']) {
             $app['monolog']->addError("Validate::max_file_size: $file_size");
             return false;
         }
-
         $i++;
 
     } while ($i < count($files['tmp_name']));
-
     return true;
 }
 

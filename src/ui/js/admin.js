@@ -20,7 +20,7 @@
             alert('Cache tühjendamine ei õnnestunud');
         });
     });
-    
+
     $('.fileupload').each(function () {
 
         var el = $(this),
@@ -63,7 +63,7 @@
             stop: function (e) {
                 clearInterval(timer);
                 setTimeout(function(){
-                    bar.find('.progress-bar').fadeOut('slow',function(){
+                    bar.find('.progress-bar').fadeOut('slow', function () {
                     bar.find('.progress-bar').remove();
                     $('#admin a.clear-cache.gallery').trigger('click');
                     });
@@ -74,6 +74,24 @@
             .parent().addClass($.support.fileInput ? undefined : 'disabled');
     });
 
-
+    $('#admin a.change-provider').on('click', function (e){
+        e.preventDefault();
+        $.ajax({
+            url:$(this).attr('href'),
+            type:'GET',
+            dataType:'json'
+        })
+        .done(function(d) {
+            if(d && typeof d == 'object' && d.status == 1) {
+                // spieces
+                alert('Albumi koopia tehtud, cache tühi, leht laeb uuesti!');
+                window.location.reload(false);
+            } else
+                alert('Ei õnnestunud');
+        })
+        .fail(function() {
+            alert('Ei õnnestunud');
+        });
+    });
 
 }(window, jQuery));
