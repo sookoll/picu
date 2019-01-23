@@ -6,24 +6,44 @@
  */
 
 // Config
-$conf = array(
-    'log_level' => 'ERROR',// DEBUG, INFO, WARNING, ERROR
+$conf = [
+    'log_level' => 'DEBUG',
     'user' => '',
     'passwd' => '',
-    'token' => '',
-    'key' => '',
-    'secret' => '',
-    'perms' => 'write',// needed for upload
-    'cache_sets' => __DIR__.'/_cache/flickr_sets.json',
-    'sizes' => array('thumb'=>'Thumbnail','small'=>'Small 320','medium'=>'Medium 800','large'=>'Large 1600'),
-    'th_size' => 170,
-    'vb_size' => 'h',
-    'referer' => 'http://sookoll.ee',
-    // upload
-    'upload' => array(
-        // allow anon upload (used for uploading from gf-client to flickr)
-        'anon' => true,
-        'accept_file_types' => '/\.(gif|jpe?g|tif|png)$/i',
-        'max_file_size' => 7000000
-    )
-);
+    'cacheDir' => __DIR__.'/_cache',
+    'providers' => [
+        'flickr' => [
+            'enabled' => true,
+            'token' => '',
+            'key' => '',
+            'secret' => '',
+            'perms' => 'write',
+            'referer' => 'http://sookoll.ee',
+            'cache_sets' => __DIR__.'/_cache/flickr_sets.json',
+            'cache_set' => __DIR__.'/_cache/flickr_set_',
+            'sizes' => array('thumb'=>'Thumbnail','small'=>'Small 320','medium'=>'Medium 800','large'=>'Large 1600'),
+            'th_size' => 300,
+            'vb_size' => 'k',
+            // upload
+            'upload' => array(
+                // allow anon upload (used for uploading from gf-client to flickr)
+                'anon' => true,
+                'accept_file_types' => '/\.(gif|jpe?g|tif|png)$/i',
+                'max_file_size' => 7000000
+            )
+        ],
+        'google' => [
+            'enabled' => true,
+            'client_id' => '',
+            'secret' => '',
+            'cache_sets' => __DIR__.'/_cache/google_sets.json',
+            'cache_set' => __DIR__.'/_cache/google_set_',
+            'authorization_url' => 'https://accounts.google.com/o/oauth2/v2/auth',
+            'auth_redirect_url' => 'http://localhost:8081/picu/admin/googleToken',
+            'auth_token_url' => 'https://www.googleapis.com/oauth2/v4/token',
+            'auth_scope_url' => 'https://www.googleapis.com/auth/photoslibrary',
+            'th_size' => 300,
+            'vb_size' => 2048,
+        ]
+    ]
+];

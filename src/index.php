@@ -84,10 +84,8 @@ $app->get('/login', function () use ($app) {
 
 // Route - login
 $app->post('/login', function (Request $request) use ($app) {
-
     $user = $app->escape($request->get('user_id'));
     $pass = $app->escape($request->get('user_pwd'));
-
     if ($app['conf']['user'] === $user && $app['conf']['passwd'] === $pass) {
         $app['session']->set('user', array('username' => $username));
         return $app->redirect($app['request']->getUriForPath('/admin'));
@@ -141,7 +139,6 @@ $app->get('/logout', function () use ($app) {
 
 // Route - clear cache
 $clear_cache = function($set = null) use ($app, $flickr, $google) {
-
     $status = 0;
     if (null === $user = $app['session']->get('user')) {
         $app->abort(404);
@@ -257,16 +254,18 @@ $app->post('/upload/{set}', function ($set) use ($app) {
 
 // Route - album view method
 $album_view = function($set, $image = null) use ($app, $flickr, $google) {
-    $id = $app->escape($set);
-    // cache or flickr api
-    $isFlickrSet = $flickr->isSet($id);
-    $isGoogleSet = $google->isSet($id);
-    $provider = $isFlickrSet ? $flickr : $google;
-    $photoset = $provider->getMedia($id, $image);
-    return $app['twig']->render('set.html', array(
-        'conf' => $app['conf'],
-        'set' => $photoset
-    ));
+    $set = $app->escape($set);
+    $isFlickrSet = $flickr->setExists($set);
+    $isGoogleSet = $google->setExists($set);
+    if ($isFlickrSet || $isGoogleSet) {
+        $provider = $isFlickrSet ? $flickr : $google;
+        $photoset = $provider->getMedia($set, $image);
+        return $app['twig']->render('set.html', array(
+            'conf' => $app['conf'],
+            'set' => $photoset
+        ));
+    }
+    $app->abort(404);
 };
 
 // Route - album view
@@ -275,75 +274,64 @@ $app->get('/a/{set}/{image}', $album_view);
 //$app->get('/a/{set}/{photo}/fs', $album_view);
 
 // Route - picture-only view
-$app->get('/p/{set}/{photo}', function($set, $photo) use ($app) {
+$app->get('/p/{set}/{photo}', function($set, $photo) use ($app, $flickr, $google) {
     $set = $app->escape($set);
     $photo = $app->escape($photo);
-    $p = null;
-
-    // read file
-    if(!is_file(__DIR__.'/_cache/flickr_set_'.$set.'.json'))
-       $app->abort(404);
-
-    $photos = json_decode(file_get_contents(__DIR__.'/_cache/flickr_set_'.$set.'.json'),true);
-    if(!isset($photos) || !isset($photos['photoset']) || !isset($photos['photoset']['photo'])) {
-        $app->abort(404);
-    }
-
-    $photoset = $photos['photoset'];
-
-    foreach($photoset['photo'] as $k => $v){
-        if($v['id'] == $photo){
-            $p = $v;
-            $photoset['thumbnail'] = $v;
-            break;
+    $isFlickrSet = $flickr->setExists($set);
+    $isGoogleSet = $google->setExists($set);
+    if ($isFlickrSet || $isGoogleSet) {
+        $provider = $isFlickrSet ? $flickr : $google;
+        $photoset = $provider->getMedia($set, $image);
+        $p = null;
+        foreach($photoset['photo'] as $k => $v){
+            if($v['id'] == $photo){
+                $p = $v;
+                $photoset['thumbnail'] = $v;
+                break;
+            }
         }
+        if($p === null)
+            $app->abort(404);
+        return $app['twig']->render('photo.html',array('photo'=>$p, 'set' => $photoset));
     }
-
-    if($p === null)
-        $app->abort(404);
-
-    return $app['twig']->render('photo.html',array('photo'=>$p, 'set_id' => $set, 'set' => $photoset));
-
+    $app->abort(404);
 })->bind('photo');
 
 // Route - photo download
-$app->get('/d/{set}/{photo}', function($set, $photo) use ($app) {
+$app->get('/d/{set}/{photo}', function($set, $photo) use ($app, $flickr, $google) {
     $set = $app->escape($set);
     $photo = $app->escape($photo);
+    $isFlickrSet = $flickr->setExists($set);
+    $isGoogleSet = $google->setExists($set);
+    if ($isFlickrSet || $isGoogleSet) {
+        $provider = $isFlickrSet ? $flickr : $google;
+        $photoset = $provider->getMedia($set, $image);
+        $src = null;
+        foreach($photoset['photo'] as $k => $v){
+            if($v['id'] == $photo && isset($v['url_o'])){
+                $src = $v['url_o'];
+                break;
+            }
+        }
+        if($src !== null){
+            $photo = curl_download($src);
+            $filename = basename($src);
+            $file_extension = strtolower(substr(strrchr($filename,"."),1));
 
-    // read file
-    if(!is_file(__DIR__.'/_cache/flickr_set_'.$set.'.json'))
-       $app->abort(404);
-
-    $photos = json_decode(file_get_contents(__DIR__.'/_cache/flickr_set_'.$set.'.json'),true);
-    if(!isset($photos) || !isset($photos['photoset']) || !isset($photos['photoset']['photo']))
-        $app->abort(404);
-    $src = null;
-    foreach($photos['photoset']['photo'] as $k => $v){
-        if($v['id'] == $photo && isset($v['url_o'])){
-            $src = $v['url_o'];
-            break;
+            switch( $file_extension ) {
+                case "gif": $ctype="image/gif"; break;
+                case "png": $ctype="image/png"; break;
+                case "jpeg":
+                case "jpg": $ctype="image/jpg"; break;
+                default:
+            }
+            $app['monolog']->addError("download : $filename $file_extension $ctype");
+            header('Content-type: ' . $ctype);
+            header('Content-Disposition: attachment; filename="'.$filename.'"');
+            return $photo;
         }
     }
-
-    if($src !== null){
-        $photo = curl_download($src);
-        $filename = basename($src);
-        $file_extension = strtolower(substr(strrchr($filename,"."),1));
-
-        switch( $file_extension ) {
-            case "gif": $ctype="image/gif"; break;
-            case "png": $ctype="image/png"; break;
-            case "jpeg":
-            case "jpg": $ctype="image/jpg"; break;
-            default:
-        }
-
-        header('Content-type: ' . $ctype);
-        header('Content-Disposition: attachment; filename="'.$filename.'"');
-        return $photo;
-    }
-
+    $app->abort(404);
 });
 
 $app->run();

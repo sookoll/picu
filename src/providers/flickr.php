@@ -9,7 +9,7 @@ class FlickrProvider {
     function isEnabled() {
         return $this->conf['enabled'];
     }
-    function isSet($set) {
+    function setExists($set) {
         if (is_file($this->conf['cache_set'].$set.'.json')) {
             return true;
         }
@@ -60,7 +60,7 @@ class FlickrProvider {
 
             $photos = $f->photosets_getPhotos($set, 'date_taken, geo, tags, url_o, url_'.$this->conf['vb_size'].', url_z, url_c');
             if(!isset($photos) || !isset($photos['photoset']) || !isset($photos['photoset']['photo']))
-                $app->abort(404);
+                $this->app->abort(404);
             // calculate thumb parameters, originals are wrong in portrait
             foreach ($photos['photoset']['photo'] as $k => $photo) {
                 $width_o = (int) $photo['width_o'];

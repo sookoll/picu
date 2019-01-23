@@ -9,14 +9,14 @@
     <meta property="og:url" content="{{ app.request.uri }}" />
     <meta property="og:image:width" content="{{ set.thumbnail.width_c }}" />
     <meta property="og:image:height" content="{{ set.thumbnail.height_c }}" />
-    <meta property="og:image" content="https://farm{{ set.thumbnail.farm }}.staticflickr.com/{{ set.thumbnail.server }}/{{ set.thumbnail.id }}_{{ set.thumbnail.secret }}_c.jpg" />
-    <link rel="image_src" href="https://farm{{ set.thumbnail.farm }}.staticflickr.com/{{ set.thumbnail.server }}/{{ set.thumbnail.id }}_{{ set.thumbnail.secret }}_c.jpg" />
+    <meta property="og:image" content="{{ set.thumbnail.url_c }}" />
+    <link rel="image_src" href="{{ set.thumbnail.url_c }}" />
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{{ app.request.baseUrl }}/lib/justifiedGallery.min/justifiedGallery.min.css" media="screen" />
     <link rel="stylesheet" type="text/css" href="{{ app.request.baseUrl }}/ui/css/style.css" media="screen" />
 </head>
 <body>
-    <header style="background-image:linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),url(https://farm{{ set.thumbnail.farm }}.staticflickr.com/{{ set.thumbnail.server }}/{{ set.thumbnail.id }}_{{ set.thumbnail.secret }}_c.jpg)">
+    <header style="background-image:linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),url({{ set.thumbnail.url_c }})">
         <h1 class="text-center">{{ set.title }}</h1>
     </header>
     <section>

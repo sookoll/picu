@@ -9,5 +9,5 @@ services:
     - 8081:80
     volumes:
     # source
-    - ./src:/var/www/html
+    - ./src:/var/www/html/picu
     - ./apachelogs:/var/log/apache2

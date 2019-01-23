@@ -3,6 +3,7 @@
 use Google\Auth\Credentials\UserRefreshCredentials;
 use Google\Auth\OAuth2;
 use Google\Photos\Library\V1\PhotosLibraryClient;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class GoogleProvider {
 
@@ -13,14 +14,60 @@ class GoogleProvider {
     function isEnabled() {
         return $this->conf['enabled'];
     }
-    function isSet($set) {
+    function checkCredentials() {
+        if ($this->app['session']->get('googleCredentials')) {
+            return true;
+        }
+        return false;
+    }
+    function auth() {
+        $oauth2 = new OAuth2([
+            'clientId' => $this->conf['client_id'],
+            'clientSecret' => $this->conf['secret'],
+            'authorizationUri' => $this->conf['authorization_url'],
+            // Where to return the user to if they accept your request to access their account.
+            // You must authorize this URI in the Google API Console.
+            'redirectUri' => $this->conf['auth_redirect_url'],
+            'tokenCredentialUri' => $this->conf['auth_token_url'],
+            'scope' => [$this->conf['auth_scope_url']],
+        ]);
+        // The authorization URI will, upon redirecting, return a parameter called code.
+        if (!isset($_GET['code'])) {
+            $authenticationUrl = $oauth2->buildFullAuthorizationUri(['access_type' => 'offline']);
+            //header('Location: ' . $authenticationUrl);
+            $this->app['monolog']->addError("Error: " . $authenticationUrl);
+            return $this->app->redirect('' . $authenticationUrl);
+            //return new RedirectResponse('http://your.location.com');
+        } else {
+            // With the code returned by the OAuth flow, we can retrieve the refresh token.
+            $oauth2->setCode($_GET['code']);
+            $authToken = $oauth2->fetchAuthToken();
+            $refreshToken = $authToken['access_token'];
+            // The UserRefreshCredentials will use the refresh token to 'refresh' the credentials when
+            // they expire.
+            $this->app['session']->set('googleCredentials', new UserRefreshCredentials(
+                [
+                    $this->conf['auth_scope_url']
+                ], [
+                    'client_id' => $this->conf['client_id'],
+                    'client_secret' => $this->conf['secret'],
+                    'refresh_token' => $refreshToken
+                ]
+            ));
+            // Return the user to the home page.
+            return $this->app->redirect($this->app['request']->getUriForPath('/admin'));
+        }
+    }
+    function setExists($set) {
         if (is_file($this->conf['cache_set'].$set.'.json')) {
             return true;
         }
         if (is_file($this->conf['cache_sets'])) {
             $sets = json_decode(file_get_contents($this->conf['cache_sets']), true);
-            $idset = array_map(function ($set) { return $set['id']; }, $sets['photoset']);
-            return in_array($set, $idset);
+            if (is_array($sets)) {
+                $idset = array_map(function ($set) { return $set['id']; }, $sets['photoset']);
+                return in_array($set, $idset);
+            }
         }
         return false;
     }
@@ -43,7 +90,7 @@ class GoogleProvider {
                         'id' => $album->getId(),
                         'title' => $album->getTitle(),
                         'coverPhotoBaseUrl' => $album->getCoverPhotoBaseUrl(),
-                        'mediaItemsCount' => $album->getMediaItemsCount()
+                        'total' => $album->getMediaItemsCount()
                     ];
                 }
                 file_put_contents($this->conf['cache_sets'], json_encode($sets));
@@ -53,51 +100,6 @@ class GoogleProvider {
         }
         return $sets['photoset'];
     }
-
-    function checkCredentials() {
-        if ($this->app['session']->get('googleCredentials')) {
-            return true;
-        }
-        return false;
-    }
-
-    function auth() {
-        $oauth2 = new OAuth2([
-            'clientId' => $this->conf['client_id'],
-            'clientSecret' => $this->conf['secret'],
-            'authorizationUri' => $this->conf['authorization_url'],
-            // Where to return the user to if they accept your request to access their account.
-            // You must authorize this URI in the Google API Console.
-            'redirectUri' => $this->conf['auth_redirect_url'],
-            'tokenCredentialUri' => $this->conf['auth_token_url'],
-            'scope' => [$this->conf['auth_scope_url']],
-        ]);
-        // The authorization URI will, upon redirecting, return a parameter called code.
-        if (!isset($_GET['code'])) {
-            $authenticationUrl = $oauth2->buildFullAuthorizationUri(['access_type' => 'offline']);
-            //header('Location: ' . $authenticationUrl);
-            return $this->app->redirect($authenticationUrl);
-        } else {
-            // With the code returned by the OAuth flow, we can retrieve the refresh token.
-            $oauth2->setCode($_GET['code']);
-            $authToken = $oauth2->fetchAuthToken();
-            $refreshToken = $authToken['access_token'];
-            // The UserRefreshCredentials will use the refresh token to 'refresh' the credentials when
-            // they expire.
-            $this->app['session']->set('googleCredentials', new UserRefreshCredentials(
-                [
-                    $this->conf['auth_scope_url']
-                ], [
-                    'client_id' => $this->conf['client_id'],
-                    'client_secret' => $this->conf['secret'],
-                    'refresh_token' => $refreshToken
-                ]
-            ));
-            // Return the user to the home page.
-            return $this->app->redirect($this->app['request']->getUriForPath('/admin'));
-        }
-    }
-
     function clearSets($set = null) {
         if (!isset($set) && is_file($this->conf['cache_sets'])) {
             unlink($this->conf['cache_sets']);
@@ -123,6 +125,8 @@ class GoogleProvider {
             $photosLibraryClient = new PhotosLibraryClient(['credentials' => $this->app['session']->get('googleCredentials')]);
             try {
                 $album = $photosLibraryClient->getAlbum($set);
+                $photos['photoset']['title'] = $album->getTitle();
+                $photos['photoset']['total'] = $album->getTitle();
                 $response = $photosLibraryClient->searchMediaItems(['albumId' => $album->getId()]);
                 // By using iterateAllElements, pagination is handled for us.
                 foreach ($response->iterateAllElements() as $item) {
@@ -146,6 +150,8 @@ class GoogleProvider {
                         $photo['th_w'] = round(($this->conf['th_size'] * $width_o) / $height_o);
                         $photo['th_mt'] = 0;
                         $photo['th_ml'] = -round(($photo['th_w'] - $this->conf['th_size'])/2);
+                        $photo['width_c'] = round((800 * $height_o) / $width_o);
+                        $photo['height_c'] = 800;
                     }
                     // portrait
                     else {
@@ -157,34 +163,28 @@ class GoogleProvider {
                         }
                         $photo['th_ml'] = 0;
                         $photo['th_mt'] = -round(($photo['th_h'] - $this->conf['th_size'])/2);
+                        $photo['width_c'] = 800;
+                        $photo['height_c'] = round((800 * $width_o) / $height_o);
                     }
                     // fallbacks
                     $photo['url_vb'] = $item->getBaseUrl() . '=w' . $this->conf['vb_size'];
-                    $photo['url_z'] = $item->getBaseUrl() . '=w' . $this->conf['vb_size'];
+                    $photo['url_z'] = $item->getBaseUrl() . '=w' . $photo['width_c'];
+                    $photo['url_c'] = $item->getBaseUrl() . '=w' . $photo['width_c'];
                     $photo['width_vb'] = $width_o;
                     $photo['height_vb'] = $height_o;
                     $photos['photoset']['photo'][] = $photo;
+                    // thumbnail
+                    if ($photo['id'] === $album->getCoverPhotoMediaItemId()) {
+                        $photos['photoset']['thumbnail'] = $photo;
+                    }
                 }
-                file_put_contents($this->conf['cache_sets'], json_encode($sets));
+                if(count($photos['photoset']['photo']) === 0) {
+                    $this->app->abort(404);
+                }
+                file_put_contents($this->conf['cache_set'].$set.'.json', json_encode($photos));
             } catch (\Google\ApiCore\ApiException $e) {
                 $this->app['monolog']->addError("Error (google): " . json_encode($e));
             }
-
-            $photos = $f->photosets_getPhotos($set, 'date_taken, geo, tags, url_o, url_'.$this->conf['vb_size'].', url_z, url_c');
-            if(!isset($photos) || !isset($photos['photoset']) || !isset($photos['photoset']['photo']))
-                $app->abort(404);
-            // calculate thumb parameters, originals are wrong in portrait
-            foreach ($photos['photoset']['photo'] as $k => $photo) {
-
-
-
-                $photos['photoset']['photo'][$k] = $photo;
-                // thumbnail
-                if ($photo['id'] == $photos['photoset']['primary']) {
-                    $photos['photoset']['thumbnail'] = $photo;
-                }
-            }
-            file_put_contents($this->conf['cache_set'].$set.'.json', json_encode($photos));
         }
         if ($image !== null) {
             foreach($photos['photoset']['photo'] as $k => $photo){
