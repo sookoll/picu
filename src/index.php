@@ -135,7 +135,7 @@ $app->get('/admin/googleToken', function () use ($app, $providers) {
         return $app->redirect($app['request']->getUriForPath('/login'));
     }
     // cache or google api
-    if ($providers['google']->isEnabled() && !$providers['google']->checkCredentials()) {
+    if ($providers['google']->isEnabled()) {
         return $providers['google']->auth();
     } else {
         return $app->redirect($app['request']->getUriForPath('/admin'));
@@ -143,8 +143,11 @@ $app->get('/admin/googleToken', function () use ($app, $providers) {
 });
 
 // Route - logout
-$app->get('/logout', function () use ($app) {
+$app->get('/logout', function () use ($app, $providers) {
     $app['session']->set('user', null);
+    if ($providers['google']->isEnabled()) {
+        $providers['google']->revoke();
+    }
     return $app->redirect($app['request']->getUriForPath('/admin'));
 });
 

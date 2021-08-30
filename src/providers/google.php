@@ -28,8 +28,8 @@ class GoogleProvider {
         // check if we have tokens stored
         if ($refreshToken === null && is_file($this->conf['tokenFile'])) {
             $token = json_decode(file_get_contents($this->conf['tokenFile']), true);
-            $refreshToken = $token['access_token'];
-            //$refreshToken = $token['refresh_token'];
+            //$refreshToken = $token['access_token'];
+            $refreshToken = $token['refresh_token'];
         }
         if ($refreshToken) {
             $this->app['session']->set('googleCredentials', new UserRefreshCredentials(
@@ -45,6 +45,9 @@ class GoogleProvider {
         return false;
     }
     function auth() {
+        if ($this->checkCredentials() || $this->refreshCredentials()) {
+            return $this->app->redirect($this->app['request']->getUriForPath('/admin'));
+        }
         $oauth2 = new OAuth2([
             'clientId' => $this->conf['client_id'],
             'clientSecret' => $this->conf['secret'],
@@ -61,8 +64,8 @@ class GoogleProvider {
             // With the code returned by the OAuth flow, we can retrieve the refresh token.
             $oauth2->setCode($_GET['code']);
             $authToken = $oauth2->fetchAuthToken();
-            $refreshToken = $authToken['access_token'];
-            //$refreshToken = $authToken['refresh_token'];
+            //$refreshToken = $authToken['access_token'];
+            $refreshToken = $authToken['refresh_token'];
             // store token for permanent access
             file_put_contents($this->conf['tokenFile'], json_encode($authToken));
             $this->app['monolog']->addDebug("Store google auth token: " . json_encode($authToken));
@@ -72,6 +75,10 @@ class GoogleProvider {
             // Return the user to the home page.
             return $this->app->redirect($this->app['request']->getUriForPath('/admin'));
         }
+    }
+    function revoke() {
+        $this->app['session']->set('googleCredentials', null);
+
     }
     function setExists($set) {
         if (is_file($this->conf['cache_set'].$set.'.json')) {
