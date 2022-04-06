@@ -197,6 +197,9 @@ a, a:hover, a:visited {
         line-height: 350px;
         font-size: 3em
     }
+    #set header h5 {
+        margin-top: -130px;
+    }
     #viewbox .tools a {
         font-size: 1em
     }

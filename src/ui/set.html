@@ -18,6 +18,9 @@
 <body>
     <header style="background-image:linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),url({{ set.thumbnail.url_c }})">
         <h1 class="text-center">{{ set.title }}</h1>
+        {% if set.description is defined %}
+        <h5 class="text-center">{{ set.description }}</h5>
+        {% endif %}
     </header>
     <section>
         <div class="thumbs">
