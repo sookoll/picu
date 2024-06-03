@@ -4,16 +4,21 @@ namespace App\Controller;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Slim\Routing\RouteContext;
 
 final class AuthController extends BaseController
 {
     public function login(Request $request, Response $response, array $args = []): Response
     {
+        $routeParser = RouteContext::fromRequest($request)->getRouteParser();
+
         if ($request->getMethod() === 'POST') {
             $data = $request->getParsedBody();
 
             if (empty($data['user_id']) || empty($data['user_pwd'])) {
-                return $response->withStatus(302)->withHeader('Location', '/admin/login');
+                $url = $routeParser->urlFor('login');
+
+                return $response->withStatus(302)->withHeader('Location', $url);
             }
 
             // Check the user username / pass
@@ -24,22 +29,29 @@ final class AuthController extends BaseController
                     'username' => $data['user_id'],
                     'is_admin' => true,
                 ];
+                $url = $routeParser->urlFor('admin');
 
-                return $response->withStatus(302)->withHeader('Location', '/admin');
+                return $response->withStatus(302)->withHeader('Location', $url);
             }
+
+            $url = $routeParser->urlFor('login');
 
             return $response->withStatus(302)->withHeader('Location', '/admin/login');
         }
-        return $this->view->render($response, 'admin/login.twig', ['user' => $request->getAttribute('user')]);
+        return $this->render($request, $response, 'admin/login.twig');
     }
 
     public function logout(Request $request, Response $response, array $args = []): Response
     {
+        $routeParser = RouteContext::fromRequest($request)->getRouteParser();
+
         $session = $request->getAttribute('session');
         $session['logged'] = false;
         unset($session['user']);
 
-        return $response->withStatus(302)->withHeader('Location', '/admin');
+        $url = $routeParser->urlFor('admin');
+
+        return $response->withStatus(302)->withHeader('Location', $url);
     }
 
     public function hash(Request $request, Response $response, array $args = []): Response

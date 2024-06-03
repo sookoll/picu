@@ -11,6 +11,7 @@ use Twig\Error\LoaderError;
 class HtmlErrorRenderer implements ErrorRendererInterface
 {
     protected Twig $view;
+    protected array $settings;
 
     /**
      * @throws ContainerExceptionInterface
@@ -19,14 +20,16 @@ class HtmlErrorRenderer implements ErrorRendererInterface
      */
     public function __construct(ContainerInterface $container)
     {
-        $settings = $container->get('settings');
-        $this->view = Twig::create($settings['view']['template_path'], $settings['view']['twig']);
+        $this->settings = $container->get('settings');
+        $this->view = Twig::create($this->settings['view']['template_path'], $this->settings['view']['twig']);
     }
 
     public function __invoke(\Throwable $exception, bool $displayErrorDetails): string
     {
         if ($exception->getCode() === 404) {
-            return $this->view->fetch('error/404.twig');
+            return $this->view->fetch('error/404.twig', [
+                'base_url' => $this->settings['base_path']
+            ]);
         }
 
         $title = '500 - ' .  get_class($exception);
@@ -35,6 +38,7 @@ class HtmlErrorRenderer implements ErrorRendererInterface
         }
 
         return $this->view->fetch('error/default.twig', [
+            'base_url' => $this->settings['base_path'],
             'title' => $title,
             'debug' => $displayErrorDetails,
             'type' => get_class($exception),

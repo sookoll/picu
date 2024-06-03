@@ -1,7 +1,7 @@
 {% extends '@__main__/layout.twig' %}
 
 {% block styles %}
-    <link rel="stylesheet" type="text/css" href="{{ full_url_for('root') }}ui/lib/jQuery-File-Upload-9.12.1/css/jquery.fileupload.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="{{ base_url }}/ui/lib/jQuery-File-Upload-9.12.1/css/jquery.fileupload.css" media="screen" />
 {% endblock %}
 
 {% block contents %}
@@ -85,7 +85,7 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ full_url_for('root') }}ui/lib/jQuery-File-Upload-9.12.1/js/vendor/jquery.ui.widget.js" type="text/javascript"></script>
-    <script src="{{ full_url_for('root') }}ui/lib/jQuery-File-Upload-9.12.1/js/jquery.fileupload.js" type="text/javascript"></script>
-    <script src="{{ full_url_for('root') }}ui/js/admin.js" type="text/javascript"></script>
+    <script src="{{ base_url }}/ui/lib/jQuery-File-Upload-9.12.1/js/vendor/jquery.ui.widget.js" type="text/javascript"></script>
+    <script src="{{ base_url }}/ui/lib/jQuery-File-Upload-9.12.1/js/jquery.fileupload.js" type="text/javascript"></script>
+    <script src="{{ base_url }}/ui/js/admin.js" type="text/javascript"></script>
 {% endblock %}

@@ -3,7 +3,6 @@
     "description": "Personal photo gallery based on Flickr API private photos",
     "homepage": "https://sookoll.ee/picu",
     "config": {
-        "vendor-dir": "src/vendor",
         "sort-packages": true,
         "process-timeout": 0
     },
@@ -23,11 +22,10 @@
     },
     "autoload": {
         "psr-4": {
-            "App\\": "src/app/",
-            "Bootstrap\\": "src/bootstrap/"
+            "App\\": "app/"
         }
     },
     "scripts": {
-        "start": "php -S localhost:8080 -t src"
+        "start": "php -S localhost:8080"
     }
 }
