@@ -18,7 +18,7 @@ var ViewBox = function(){
 
 ViewBox.prototype = {
 
-    init : function(){
+    init: function (){
 
         this.dom_overlay = $('#viewbox');
         this.dom_modal = $('#viewbox .img-container div');
@@ -26,17 +26,19 @@ ViewBox.prototype = {
         var load = this.resize();
 
     },
-    
-    resize : function(){
+
+    resize: function (){
         if(!this.th)
             return;
         var dims = this.calculateDimensions();
-        this.dom_modal.parent().css({'width':dims.w+'px','height':dims.h+'px'});
+        this.dom_modal.parent().css({
+            'width': dims.w + 'px',
+            'height': dims.h + 'px'
+        });
         return dims.load;
     },
-    
-    calculateDimensions : function(){
 
+    calculateDimensions: function (){
         var maxW = $(window).width();
         var maxH = $(window).height();
         var newW = this.th[0].naturalWidth;

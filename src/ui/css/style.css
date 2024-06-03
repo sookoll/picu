@@ -46,39 +46,32 @@ a, a:hover, a:visited {
     background:#666;
     box-shadow: 0 0 10px #333
 }
-#admin header h1 {
+#admin header h2 {
     color: #ddd;
-    font-weight:bold;
     margin:0
 }
-
-#admin section ul {
-    list-style-type: none;
-    margin: 10px 0;
-    padding: 0
+#admin section {
+    margin-top: 16px;
 }
-#admin section ul li {
-    padding: 6px 0;
+#admin section .provider-tools {
+    margin-top: -6px;
+}
+#admin section .album .info {
     position: relative;
 }
-#admin section ul li img {
-    display: block;
-    width: 50px;
-    height: 50px;
-    margin-right: 12px;
+#admin section .album .info .album-tools {
+    position: absolute;
+    bottom: 2px;
 }
-#admin section ul li h3 {
-    font-size: 20px;
-    margin: 0 0 5px 0
-}
-#admin section ul li .tools > * {
+
+#admin section .album .info .album-tools > * {
     margin-right: 8px;
     /* fix for jquery.fileupload */
     display: inline-block;
     overflow: hidden;
 }
 
-#admin section ul li .bar {
+#admin section .album .info .bar {
     margin: 0;
     width: 100%;
     height: 1px;
@@ -86,7 +79,7 @@ a, a:hover, a:visited {
     position: absolute;
     bottom: 0;
 }
-#admin section ul li .progress-bar {
+#admin section .album .info .bar .progress-bar {
     height: 1px;
     background: blue;
 }

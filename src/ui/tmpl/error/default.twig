@@ -1,0 +1,23 @@
+{% extends '@__main__/layout.twig' %}
+
+{% block contents %}
+<div class="container text-center">
+    <div id="loginform">
+        <h1>{{ code }}</h1>
+        <h2>{{ title }}</h2>
+        {% if debug %}
+            <h3>Details</h3>
+            <ul>
+                <li><b>Type: </b>{{ type }}</li>
+                <li><b>Code: </b>{{ code }}</li>
+                <li><b>Message: </b>{{ message }}</li>
+                <li><b>File: </b>{{ file }}</li>
+                <li><b>Line: </b>{{ line }}</li>
+            </ul>
+        {% endif %}
+    </div>
+    <a href="https://github.com/sookoll/picu">
+        <img src="{{ app.request.base_url }}/ui/img/GitHub-Mark-32px.png" />
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends '@__main__/layout.twig' %}
+
+{% block contents %}
+<div class="container text-center">
+    <div id="loginform">
+        <h1>Picu</h1>
+        <form method="post" name="loginform" action="{{ url_for('login') }}">
+            <div class="input">
+                <input type="text" class="form-control" name="user_id" id="user_id" placeholder="Username" autofocus>
+            </div>
+            <div class="input">
+                <input type="password" class="form-control" name="user_pwd" id="user_pwd" placeholder="Password">
+            </div>
+            <div class="input">
+                <input class="btn btn-default" type="submit" value="Logi sisse" />
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

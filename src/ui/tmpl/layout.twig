@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html id="{{ page }}">
+<head>
+    <title>{{ title }}</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    {% block meta %}{% endblock %}
+    <link href="https://netdna.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet">
+    {% block styles %}{% endblock %}
+    <link rel="stylesheet" type="text/css" href="{{ app.request.base_url }}/ui/css/style.css" media="screen" />
+</head>
+<body>
+    {% block contents %}
+    {% endblock %}
+    <script src="{{ app.request.base_url }}/ui/lib/jquery/jquery-2.1.1.min.js" type="text/javascript"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
+
