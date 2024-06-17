@@ -64,7 +64,8 @@ final class AdminController extends BaseController
     {
         /** @var ProviderInterface $provider */
         $provider = $this->service->getProvider($args['provider']);
-        if ($provider && $provider->isEnabled() && $provider->removeCache($args['album'])) {
+        $album = $args['album'] ?? null;
+        if ($provider && $provider->isEnabled() && $provider->removeCache($album)) {
             return Utilities::redirect('admin', $request, $response);
         }
 
