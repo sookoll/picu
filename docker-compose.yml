@@ -1,0 +1,13 @@
+version: '3'
+services:
+  picu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: picu
+    ports:
+    - 8081:80
+    volumes:
+    # source
+    - ./src:/var/www/html/picu
+    - ./apachelogs:/var/log/apache2

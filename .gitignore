@@ -1,5 +1,6 @@
+src/.env
 src/config.php
-src/_cache/*
-src/_logs/*
-src/_tmp/*
+src/var
+src/vendor
 .idea
+.DS_Store

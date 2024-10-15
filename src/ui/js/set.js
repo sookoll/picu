@@ -3,7 +3,8 @@
  * swipe: http://www.awwwards.com/touchswipe-a-jquery-plugin-for-touch-and-gesture-based-interaction.html
  */
 var ViewBox = function(){
-    this.path = location.pathname.match(/[^/].*[^/]\/a/g)[0];
+    var matches = window.location.href.match(/[^\/].*[^\/]\/a/g)
+    this.path = matches[0];
     this.gallery = [];
     this.is_open = false;
     this.current = null;
@@ -36,22 +37,14 @@ ViewBox.prototype = {
         href = this.formatHref(href);
         href_ = href.split('/');
 
-        // fullscreen
-        if(href_.length > 0 && href_[href_.length-1] == 'fs'){
-            this.toggleFullScreen();
-            href_.splice(href_.length-1,1);
-            href = href_.join('/');
-        }
-
         // already open
-        if(this.current == href)
+        if(this.current === href)
             return;
 
         this.dom_modal.html('');
         this.dom_overlay
             .find('a.next, a.prev')
             .removeClass('disabled');
-
 
         // find next and prev
         if($.inArray(href,this.gallery) + 1 > this.gallery.length-1){
@@ -67,7 +60,8 @@ ViewBox.prototype = {
         else
             this.prev = this.gallery[($.inArray(href,this.gallery) - 1)];
 
-        this.th = $('li[data-id='+href_[1]+'] a.viewbox img');
+        this.th = $('a.viewbox[data-id='+href_[1]+'] img');
+
         var src = this.th.attr('data-original');
         var img = $('<img src="'+src+'" class="" />')
         var load = this.resize();
@@ -76,13 +70,12 @@ ViewBox.prototype = {
         // tools
         var index = this.gallery.indexOf(href) + 1;
         var tools = this.dom_overlay.find('.tools');
-        tools.find('.title span').html(this.th.closest('a').attr('title'));
-        tools.find('.title a').attr('href', this.th.closest('li').find('a.link').attr('href'));
-        tools.find('a.download').attr('href', this.th.closest('li').find('a.download').attr('href'));
-        tools.find('a.full').attr('href', this.th.closest('li').find('a.full').attr('href'));
+        tools.find('.title span').html(this.th.attr('alt'));
+        tools.find('.title a').attr('href', this.th.data('img-link'));
+        tools.find('a.download').attr('href', this.th.data('img-download'));
         tools.find('a.counter').html(index + ' / ' + this.gallery.length);
 
-        if(!this.is_open){
+        if (!this.is_open){
             this.dom_overlay.show();
             $('body').addClass('no-scroll');
             this.is_open = true;
@@ -97,6 +90,9 @@ ViewBox.prototype = {
 
         // scroll page if out of view
         this.scrollToView(this.th)
+
+        $('a.viewbox img').removeClass('hover');
+        this.th.addClass('hover');
     },
 
     close : function(){
@@ -107,11 +103,16 @@ ViewBox.prototype = {
         this.current = null;
         this.next = null;
         this.prev = null;
+        setTimeout(function () {
+            $('a.viewbox img').removeClass('hover');
+        }, 200);
+
     },
 
-    formatHref : function(href){
-        href = href.match(/a\/[^/].*[^/]/g)[0];
-        return href.replace(/^(a\/)/,'');
+    formatHref : function(href) {
+        var matches = href.match(/a\/[^\/].*[^\/]/g);
+        href = matches ? matches[0] : '';
+        return href.replace(/^(a\/)/, '');
     },
 
     resize : function(){
@@ -191,7 +192,7 @@ ViewBox.prototype = {
         var offset = element.offset().top;
         if(!element.is(":visible")) {
             element.css({"visiblity":"hidden"}).show();
-            var offset = element.offset().top;
+            offset = element.offset().top;
             element.css({"visiblity":"", "display":""});
         }
 
@@ -217,86 +218,104 @@ ViewBox.prototype = {
         return;
     }
 
-    $('img.lazy').lazyload({
-        threshold : 200,
-        effect : 'fadeIn'
+    $('#set .thumbs').justifiedGallery({
+        lastRow: 'justify',
+        rowHeight: 250,
+        maxRowHeight: 500,
+        margins: 4,
+        waitThumbnailsLoad: false
+    }).on('jg.complete', function (e) {
+        $('img.lazy').lazyload({
+            threshold : 200,
+            effect : 'fadeIn'
+        });
+    }).on('jg.resize', function (e) {
+        $('img.lazy').lazyload({
+            threshold : 200,
+            effect : 'fadeIn'
+        });
     });
 
-    $('#set section ul li').hover(function(){
-        $(this).find('.tools').toggleClass('hidden');
-    });
+    $("#set .thumbs .caption").removeClass('hidden');
 
     // ViewBox
     var vb = new ViewBox();
 
-    // draggable
-    vb.dom_modal.pep({
-        axis: "x",
-        revert: true,
-        cssEaseDuration: 200,
-        stop: function(e, ui){
-            if(ui.pos.x > 100){
-                if(!vb.is_open)
-                    return;
-                history.pushState(null, null, '/' + vb.path + '/' + vb.prev);
-                vb.open('/' + vb.path + '/' + vb.prev);
-            }
-            else if(ui.pos.x < -100){
-                if(!vb.is_open)
-                    return;
-                history.pushState(null, null, '/' + vb.path + '/' + vb.next);
-                vb.open('/' + vb.path + '/' + vb.next);
+    // slide
+    $('body').swipe({
+        swipe: function(event,direction) {
+            if(direction == 'left') {
+                slideHandle('left');
+            } else if(direction == 'right') {
+                slideHandle('right');
             }
         }
     });
+
+    function buildHref(path1, path2) {
+        return path1 + '/' + path2
+    }
+
+    function openImageView(path, isFullPath = false) {
+        var href = isFullPath ? path : buildHref(vb.path, path)
+        history.pushState(null, null, href);
+        vb.open(href);
+    }
+
+    function slideHandle (direction) {
+        if (direction === 'right') {
+            if(!vb.is_open)
+                return;
+            openImageView(vb.prev)
+        } else {
+            if(!vb.is_open)
+                return;
+            openImageView(vb.next)
+        }
+    }
 
     $('body')
         .on('click','a.viewbox, a.full',function(e){
             e.preventDefault();
             var href = $(this).attr('href');
-            history.pushState(null, null, href);
-            vb.open(href);
+            openImageView(href, true)
         })
         .on('click','a.prev',function(e){
             e.preventDefault();
             if(!vb.is_open)
                 return;
-            history.pushState(null, null, '/' + vb.path + '/' + vb.prev);
-            vb.open('/' + vb.path + '/' + vb.prev);
+            openImageView(vb.prev)
         })
         .on('click','a.next',function(e){
             e.preventDefault();
             if(!vb.is_open)
                 return;
-            history.pushState(null, null, '/' + vb.path + '/' + vb.next);
-            vb.open('/' + vb.path + '/' + vb.next);
+            openImageView(vb.next)
         })
         .on('click','a.vb-close',function(e){
             e.preventDefault();
             if(!vb.is_open)
                 return;
             var href = vb.formatHref(location.pathname).split('/');
-            history.pushState(null, null, '/' + vb.path + '/' + href[0]);
+            history.pushState(null, null, vb.path + '/' + href[0]);
             vb.close();
         })
         .on('swiperight','#viewbox',function(){
             if(!vb.is_open)
                 return;
-            history.pushState(null, null, '/' + vb.path + '/' + vb.prev);
-            vb.open('/' + vb.path + '/' + vb.prev);
+            openImageView(vb.prev)
         })
         .on('swipeleft','#viewbox',function(){
             if(!vb.is_open)
                 return;
-            history.pushState(null, null, '/' + vb.path + '/' + vb.next);
-            vb.open('/' + vb.path + '/' + vb.next);
+            openImageView(vb.next)
         });
 
     $(window).bind('popstate', function() {
         //var href = location.pathname.replace(/^.*[\\/]/, ""); // get filename only
         var href = vb.formatHref(location.pathname);
         if(href && href.match(/\//g) && href.match(/\//g).length > 0)
-            vb.open('/' + vb.path + '/' + href);
+            vb.open(vb.path + '/' + href);
         else
             vb.close();
     }).trigger('popstate');
@@ -309,8 +328,7 @@ ViewBox.prototype = {
                 if(!vb.is_open)
                     return;
                 e.preventDefault();
-                history.pushState(null, null, '/' + vb.path + '/' + vb.prev);
-                vb.open('/' + vb.path + '/' + vb.prev);
+                openImageView(vb.prev)
             break;
             case 38:// up
 
@@ -319,8 +337,7 @@ ViewBox.prototype = {
                 if(!vb.is_open)
                     return;
                 e.preventDefault();
-                history.pushState(null, null, '/' + vb.path + '/' + vb.next);
-                vb.open('/' + vb.path + '/' + vb.next);
+                openImageView(vb.next)
             break;
             case 40:// down
 
@@ -330,7 +347,7 @@ ViewBox.prototype = {
                     return;
                 e.preventDefault();
                 var href = vb.formatHref(location.pathname).split('/');
-                history.pushState(null, null, '/' + vb.path + '/' + href[0]);
+                history.pushState(null, null, vb.path + '/' + href[0]);
                 vb.close();
             break;
         }
