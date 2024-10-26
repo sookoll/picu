@@ -1,0 +1,54 @@
+{% extends '@__main__/layout.twig' %}
+
+{% block styles %}
+    <link rel="stylesheet" type="text/css" href="{{ base_url }}/ui/lib/jQuery-File-Upload-9.12.1/css/jquery.fileupload.css" media="screen" />
+{% endblock %}
+
+{% block contents %}
+    <div id="admin">
+        {% include 'admin/navbar.twig' %}
+        <section class="col-xs-12">
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                        <span class="pull-right provider-tools">
+                            {% if provider.authenticated %}
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('admin') }}" class="btn btn-default" title="Tagasi">
+                                        Tagasi
+                                    </a>
+                                    <a href="{{ url_for('import_sync', { 'provider': provider.id }) }}" class="btn btn-danger" title="Impordi kõik">
+                                        <i class="glyphicon glyphicon-save"></i> Impordi kõik
+                                    </a>
+                                </div>
+                            {% else %}
+                                <a href="{{ url_for('provider_login', { 'provider': provider.id }) }}" title="Log in" class="btn btn-link btn-sm">
+                                    Autoriseeri
+                                    <i class="glyphicon glyphicon-log-in"></i>
+                                </a>
+                            {% endif %}
+                        </span>
+                            <h2 class="panel-title">Import: {{ provider.label }}</h2>
+                        </div>
+                        <div class="panel-body">
+                            {% if provider.albums | length < 1 %}
+                                Albumid puuduvad.
+                            {% else %}
+                                {% for album in provider.albums %}
+                                    {% include 'admin/album.twig' %}
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ base_url }}/ui/lib/jQuery-File-Upload-9.12.1/js/vendor/jquery.ui.widget.js" type="text/javascript"></script>
+    <script src="{{ base_url }}/ui/lib/jQuery-File-Upload-9.12.1/js/jquery.fileupload.js" type="text/javascript"></script>
+    <script src="{{ base_url }}/ui/js/admin.js" type="text/javascript"></script>
+{% endblock %}

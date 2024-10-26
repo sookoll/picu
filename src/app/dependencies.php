@@ -6,8 +6,6 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Processor\UidProcessor;
 use Psr\Container\ContainerInterface;
-use Doctrine\ORM\ORMSetup;
-use Doctrine\ORM\EntityManager;
 use Slim\Views\Twig;
 
 return static function (ContainerBuilder $containerBuilder) {
@@ -33,5 +31,16 @@ return static function (ContainerBuilder $containerBuilder) {
             $settings = $container->get('settings');
             return Twig::create($settings['view']['template_path'], $settings['view']['twig']);
         },
+        'db' => function (ContainerInterface $container) {
+            $settings = $container->get('settings');
+            $dbSettings = $settings['db'];
+
+            $dsn = "mysql:host={$dbSettings['host']};port={$dbSettings['port']};dbname={$dbSettings['name']};charset=utf8";
+            $database = new PDO($dsn, $dbSettings['user'], $dbSettings['pass']);
+            $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $database->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+
+            return $database;
+        }
     ]);
 };

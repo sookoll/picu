@@ -56,6 +56,9 @@ a, a:hover, a:visited {
 #admin section .provider-tools {
     margin-top: -6px;
 }
+#admin section .album .media-object {
+    width: 200px;
+}
 #admin section .album .info {
     position: relative;
 }

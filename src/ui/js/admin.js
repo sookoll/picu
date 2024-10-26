@@ -1,6 +1,18 @@
 ;(function(window, $) {
     'use strict';
 
+    $('.album-delete').on('click', function(e) {
+        e.preventDefault();
+        console.log(e.target.href)
+        $.ajax({
+            url: e.target.href,
+            type: 'DELETE',
+            success: function (result) {
+                window.location.reload();
+            }
+        });
+    });
+
     $('.fileupload').each(function () {
 
         var el = $(this),

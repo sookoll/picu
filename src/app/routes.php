@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use App\Controller\AdminController;
+use App\Controller\ApiController;
 use App\Controller\AuthController;
 use App\Controller\GalleryController;
 use App\Controller\HomeController;
@@ -27,12 +28,25 @@ return function (App $app) {
         $group->get('/{provider}/logout', AdminController::class . ':logout')
             ->setName('provider_logout')
             ->add(AuthenticationMiddleware::class);
-        $group->get('/{provider}/remove-cache[/{album}]', AdminController::class . ':removeCache')
-            ->setName('provider_remove_cache')
+        $group->get('/{provider}/import', AdminController::class . ':validate')
+            ->setName('import_validate')
+            ->add(AuthenticationMiddleware::class);
+        $group->get('/{provider}/sync[/{album}]', AdminController::class . ':import')
+            ->setName('import_sync')
+            ->add(AuthenticationMiddleware::class);
+        $group->get('/{provider}/autorotate[/{album}]', AdminController::class . ':autorotate')
+            ->setName('provider_autorotate')
             ->add(AuthenticationMiddleware::class);
         $group->post('/{provider}/upload[/{album}]', AdminController::class . ':upload')
             ->setName('provider_upload')
             ->add(AuthenticationMiddleware::class);
+        $group->delete('/{provider}/{album}', AdminController::class . ':delete')
+            ->setName('album_delete')
+            ->add(AuthenticationMiddleware::class);
+    });
+    $app->group('/api', function (Group $group) {
+        $group->get('/set[/album]', ApiController::class . ':set')
+            ->setName('api_set');
     });
     $app->get('/a/{album}[/{photo}]', GalleryController::class . ':album')->setName('album');
     $app->get('/p/{album}/{photo}', GalleryController::class . ':photo')->setName('photo');

@@ -15,7 +15,8 @@ class GalleryController extends BaseController
     public function __construct(ContainerInterface $container, private readonly ProviderService $service)
     {
         parent::__construct($container);
-        $this->service->initProviders($this->settings['providers'] ?? null);
+
+        $this->service->initProviders();
     }
 
     public function album(Request $request, Response $response, array $args = []): Response

@@ -2,12 +2,12 @@
 
 namespace App\Model;
 
-class Album
+class Album extends Item
 {
-    public string $id;
-    public string $label;
-    public string $description;
-    public string $cover;
+    public Provider $provider;
+    public ?string $cover;
+    public ?string $owner;
+    public bool $public = false;
     public int $photos = 0;
     public int $videos = 0;
 }
