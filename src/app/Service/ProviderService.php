@@ -180,6 +180,7 @@ class ProviderService extends BaseService
                 $album->itemChange = ItemChangeEnum::CHANGE;
             }
             else {
+                $album->id = $dbAlbum->id;
                 $album->itemChange = ItemChangeEnum::OK;
             }
             $data[] = $album;

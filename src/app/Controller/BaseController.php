@@ -1,6 +1,7 @@
 <?php
 namespace App\Controller;
 
+use JsonException;
 use Monolog\Logger;
 use PDO;
 use Psr\Container\ContainerExceptionInterface;
@@ -44,5 +45,20 @@ abstract class BaseController
         $params['title'] = $params['title'] ?? 'Picu';
 
         return $this->view->render($response, $template, $params);
+    }
+
+    /**
+     * @param Response $response
+     * @param mixed $data
+     * @return Response
+     * @throws JsonException
+     */
+    protected function json(Response $response, mixed $data): Response
+    {
+        $payload = json_encode($data, JSON_THROW_ON_ERROR);
+
+        $response->getBody()->write($payload);
+        return $response
+            ->withHeader('Content-Type', 'application/json');
     }
 }

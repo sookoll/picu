@@ -18,8 +18,9 @@
                                     <a href="{{ url_for('admin') }}" class="btn btn-default" title="Tagasi">
                                         Tagasi
                                     </a>
-                                    <a href="{{ url_for('import_sync', { 'provider': provider.id }) }}" class="btn btn-danger" title="Impordi kõik">
-                                        <i class="glyphicon glyphicon-save"></i> Impordi kõik
+                                    <a href="{{ full_url_for('root') }}upload/{{ album.id }}" class="fileupload fileinput-button btn btn-default" title="Lae pilte juurde">
+                                        <i class="glyphicon glyphicon-open"></i> Lae pilte
+                                        <input type="file" name="files[]" accept="image/*" multiple />
                                     </a>
                                 </div>
                             {% else %}
@@ -29,14 +30,14 @@
                                 </a>
                             {% endif %}
                         </span>
-                            <h2 class="panel-title">Import: {{ provider.label }}</h2>
+                            <h2 class="panel-title">Muuda: {{ album.title }}</h2>
                         </div>
                         <div class="panel-body">
-                            {% if albums | length < 1 %}
-                                Albumid puuduvad.
+                            {% if items | length < 1 %}
+                                Album on tühi
                             {% else %}
-                                {% for album in albums %}
-                                    {% include 'admin/album.twig' %}
+                                {% for item in items %}
+                                    {% include 'admin/item.twig' %}
                                 {% endfor %}
                             {% endif %}
                         </div>

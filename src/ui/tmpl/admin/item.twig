@@ -1,0 +1,38 @@
+<div class="media album">
+    <div class="media-left">
+        <a href="{{ url_for('item', { 'album': album.id, 'photo': item.id }) }}" target="_blank">
+            <img
+                class="media-object"
+                src="{{ item.url }}"
+                title="{{ item.title }}"
+                alt="{{ item.title }}"/>
+        </a>
+    </div>
+    <div class="media-body info">
+        <h4 class="media-heading">
+            <a href="{{ url_for('item', { 'album': album.id, 'photo': item.id }) }}" target="_blank">{{ item.title }}</a>
+        </h4>
+        <div  class="text-muted small">{{ item.description }}</div>
+        <div  class="text-muted small">{{ item.id }} | {{ item.fid }}</div>
+        <div>
+            <span>
+                {% if item.type == 'image' %}
+                <i class="glyphicon glyphicon-camera"></i>
+                {% elseif item.type == 'video' %}
+                <i class="glyphicon glyphicon-film"></i>
+                {% endif %}
+            </span>
+        </div>
+        <div class="album-tools">
+            <a href="{{ url_for('album_delete', { 'provider': provider.id, 'album': album.id, 'item': item.id }) }}" class="album-delete" title="Kustuta">
+                <i class="glyphicon glyphicon-remove"></i> Kustuta
+            </a>
+            {% if provider.editable %}
+                <a href="{{ url_for('provider_autorotate', { 'provider': provider.id, 'album': album.fid, 'item': item.id }) }}" title="Autorotate">
+                    <i class="glyphicon glyphicon-retweet"></i> Autorotate
+                </a>
+            {% endif %}
+        </div>
+        <div class="bar"></div>
+    </div>
+</div>

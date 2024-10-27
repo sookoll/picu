@@ -124,7 +124,7 @@ class FlickrService extends BaseService implements ApiInterface
             foreach ($sets['photoset'] as $i => $set) {
                 $album = new Album();
                 $album->fid = $set['id'];
-                $album->provider = $this->provider;
+                $album->setProvider($this->provider);
                 $album->owner = $set['owner'];
                 $album->title = is_string($set['title']) ? $set['title'] : $set['title']['_content'];
                 $album->description = is_string($set['description']) ? $set['description'] : $set['description']['_content'];

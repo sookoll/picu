@@ -14,7 +14,9 @@ return function (App $app) {
     $container = $app->getContainer();
     $settings = $container?->get('settings');
 
+    // index
     $app->get('/', HomeController::class . ':index')->setName('root');
+    // Admin
     $app->group('/admin', function (Group $group) {
         $group->map(['GET', 'POST'],'/login', AuthController::class . ':login')->setName('login');
         $group->get('/logout', AuthController::class . ':logout')->setName('logout');
@@ -40,15 +42,23 @@ return function (App $app) {
         $group->post('/{provider}/upload[/{album}]', AdminController::class . ':upload')
             ->setName('provider_upload')
             ->add(AuthenticationMiddleware::class);
-        $group->delete('/{provider}/{album}', AdminController::class . ':delete')
+        $group->get('/{provider}/{album}', AdminController::class . ':album')
+            ->setName('provider_album')
+            ->add(AuthenticationMiddleware::class);
+        $group->put('/{provider}/{album}', AdminController::class . ':updateAlbum')
+            ->setName('provider_album')
+            ->add(AuthenticationMiddleware::class);
+        $group->delete('/{provider}/{album}[/{item}]', AdminController::class . ':delete')
             ->setName('album_delete')
             ->add(AuthenticationMiddleware::class);
     });
+    // API
     $app->group('/api', function (Group $group) {
-        $group->get('/set[/album]', ApiController::class . ':set')
+        $group->get('/set[/{album}]', ApiController::class . ':set')
             ->setName('api_set');
     });
+    // Gallery
     $app->get('/a/{album}[/{photo}]', GalleryController::class . ':album')->setName('album');
-    $app->get('/p/{album}/{photo}', GalleryController::class . ':photo')->setName('photo');
+    $app->get('/p/{album}/{photo}', GalleryController::class . ':photo')->setName('item');
     $app->get('/d/{album}/{photo}', GalleryController::class . ':download')->setName('photo_download');
 };

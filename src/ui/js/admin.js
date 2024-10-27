@@ -1,9 +1,19 @@
 ;(function(window, $) {
     'use strict';
 
+    function updateAlbum(url, data) {
+        $.ajax({
+            url: url,
+            type: 'PUT',
+            data: data,
+            success: function (result) {
+                window.location.reload();
+            }
+        });
+    }
+
     $('.album-delete').on('click', function(e) {
         e.preventDefault();
-        console.log(e.target.href)
         $.ajax({
             url: e.target.href,
             type: 'DELETE',
@@ -12,6 +22,21 @@
             }
         });
     });
+
+    $('.album-set-private').on('click', function(e) {
+        e.preventDefault();
+        updateAlbum(e.target.href, {
+            public: false,
+        })
+    });
+
+    $('.album-set-public').on('click', function(e) {
+        e.preventDefault();
+        updateAlbum(e.target.href, {
+            public: true,
+        })
+    });
+
 
     $('.fileupload').each(function () {
 

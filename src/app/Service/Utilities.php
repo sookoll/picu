@@ -4,7 +4,7 @@ namespace App\Service;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use ShortCode\Random;
+use RuntimeException;
 use Slim\Routing\RouteContext;
 
 class Utilities

@@ -64,7 +64,7 @@ class DiskService extends BaseService implements ApiInterface
 
             $album = new Album();
             $album->fid = $set['name'];
-            $album->provider = $this->provider;
+            $album->setProvider($this->provider);
             $album->title = $set['name'];
             if (count($images)) {
                 $album->cover = $this->getItemUrl($baseUrl.$set['path'], $images[0]);

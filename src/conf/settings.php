@@ -23,6 +23,7 @@ return static function (ContainerBuilder $containerBuilder) {
         // Admin user
         'admin_user' => $_ENV['ADMIN_USER'],
         'admin_pass' => $_ENV['ADMIN_PASS'],
+        'api_token' => $_ENV['API_TOKEN'],
         // Root path
         'rootPath' => $rootPath,
         // Cache dir

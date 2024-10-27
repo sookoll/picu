@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Enum\ItemTypeEnum;
+use App\Enum\ProviderEnum;
 use App\Model\Album;
 use App\Model\Photo;
 use App\Model\Provider;
@@ -20,23 +21,26 @@ class AlbumService extends BaseService
      * @param bool $public
      * @return Album[]
      */
-    public function getList(Provider $provider, string $albumId = null, bool $public = false): array
+    public function getList(Provider $provider = null, string $albumId = null, bool $onlyPublic = false): array
     {
         $where = [
-            'pa.provider' => ['=', ':provider']
+            '1' => ['=', '1']
         ];
-        $params = [
-            'provider' => $provider->getId()
-        ];
+        $params = [];
+
+        if ($provider) {
+            $where['pa.provider'] = ['=', ':provider'];
+            $params['provider'] = $provider->getId();
+        }
 
         if ($albumId) {
             $where['pa.id'] = ['=', ':id'];
             $params['id'] = $albumId;
         }
 
-        if ($public) {
+        if ($onlyPublic) {
             $where['pa.public'] = ['=', ':public'];
-            $params['public'] = $public;
+            $params['public'] = $onlyPublic;
         }
 
         $conditions = Utilities::serializeStatementCondition($where);
@@ -78,16 +82,18 @@ class AlbumService extends BaseService
         $albums = [];
 
         while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $providerEnum = ProviderEnum::from($row['provider']);
             $album = new Album();
             $album->id = $row['id'];
             $album->fid = $row['fid'];
-            $album->provider = $provider;
+            $album->setProvider($provider ?? new Provider($providerEnum, $this->settings['providers'][$providerEnum->value]));
             $album->owner = $row['owner'];
             $album->title = $row['title'];
             $album->description = $row['description'];
             $album->cover = $row['cover'];
             $album->photos = $row['photos'];
             $album->videos = $row['videos'];
+            $album->public = $row['public'];
             $albums[] = $album;
         }
 
@@ -113,12 +119,12 @@ class AlbumService extends BaseService
         $params = [
             'id' => $album->id,
             'fid' => $album->fid,
-            'provider' => $album->provider->getId(),
+            'provider' => $album->getProvider()->getId(),
             'title' => $album->title,
             'description' => $album->description ?? null,
             'cover' => $album->cover ?? null,
             'owner' => $album->owner ?? null,
-            'public' => $album->public ?? false,
+            'public' => $album->public ? 1 : 0,
             'sort' => $album->sort,
         ];
         $intValues = ['public', 'sort'];
@@ -136,7 +142,7 @@ class AlbumService extends BaseService
     public function update(Album $album): void
     {
         if (!isset($album->id)) {
-            throw new RuntimeException("Album update failed, missing id: {$album->provider->getId()}, $album->fid");
+            throw new RuntimeException("Album update failed, missing id: {$album->getProvider()->getId()}, $album->fid");
         }
         $sql = "
             UPDATE picu_album SET
@@ -151,12 +157,12 @@ class AlbumService extends BaseService
         ";
         $params = [
             'id' => $album->id,
-            'provider' => $album->provider->getId(),
+            'provider' => $album->getProvider()->getId(),
             'title' => $album->title,
             'description' => $album->description ?? null,
             'cover' => $album->cover,
             'owner' => $album->owner ?? null,
-            'public' => $album->public,
+            'public' => $album->public ? 1 : 0,
             'sort' => $album->sort,
         ];
         $intValues = ['public', 'sort'];
@@ -174,7 +180,7 @@ class AlbumService extends BaseService
     public function delete(Album $album): void
     {
         if (!isset($album->id)) {
-            throw new RuntimeException("Album delete failed, missing id: {$album->provider->getId()}, $album->fid");
+            throw new RuntimeException("Album delete failed, missing id: {$album->getProvider()->getId()}, $album->fid");
         }
         $sql = "
             DELETE FROM picu_album WHERE id = :id
