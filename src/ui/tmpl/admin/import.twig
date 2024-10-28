@@ -6,7 +6,7 @@
 
 {% block contents %}
     <div id="admin">
-        {% include 'admin/navbar.twig' %}
+        {% include 'admin/includes/navbar.twig' %}
         <section class="col-xs-12">
             <div class="row">
                 <div class="col-xs-12">
@@ -16,7 +16,7 @@
                             {% if provider.authenticated %}
                                 <div class="btn-group btn-group-sm">
                                     <a href="{{ url_for('admin') }}" class="btn btn-default" title="Tagasi">
-                                        Tagasi
+                                        <i class="glyphicon glyphicon-arrow-left"></i> Tagasi
                                     </a>
                                     <a href="{{ url_for('import_sync', { 'provider': provider.id }) }}" class="btn btn-danger" title="Impordi kõik">
                                         <i class="glyphicon glyphicon-save"></i> Impordi kõik
@@ -36,7 +36,7 @@
                                 Albumid puuduvad.
                             {% else %}
                                 {% for album in albums %}
-                                    {% include 'admin/album.twig' %}
+                                    {% include 'admin/includes/album.twig' %}
                                 {% endfor %}
                             {% endif %}
                         </div>

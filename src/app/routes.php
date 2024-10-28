@@ -6,6 +6,7 @@ use App\Controller\ApiController;
 use App\Controller\AuthController;
 use App\Controller\GalleryController;
 use App\Controller\HomeController;
+use App\Controller\ImageController;
 use App\Middleware\AuthenticationMiddleware;
 use Slim\App;
 use Slim\Interfaces\RouteCollectorProxyInterface as Group;
@@ -61,6 +62,9 @@ return function (App $app) {
         $group->get('/item/{album}[/{item}]', ApiController::class . ':item')
             ->setName('api_item_sizes');
     });
+    // Image
+    $app->get('/media/cache/{item}_{size}.{ext}', ImageController::class . ':image')->setName('api_image');
+
     // v1 Gallery endpoints
     $app->get('/a/{album}[/{photo}]', GalleryController::class . ':album')->setName('album');
     $app->get('/p/{album}/{photo}', GalleryController::class . ':photo')->setName('item');

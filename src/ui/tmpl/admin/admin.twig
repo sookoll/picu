@@ -6,7 +6,7 @@
 
 {% block contents %}
     <div id="admin">
-        {% include 'admin/navbar.twig' %}
+        {% include 'admin/includes/navbar.twig' %}
         <section class="col-xs-12">
             <div class="row">
                 {% for key, provider in providers %}
@@ -40,7 +40,7 @@
                                     </a>
                                 {% else %}
                                 {% for album in provider.albums %}
-                                    {% include 'admin/album.twig' %}
+                                    {% include 'admin/includes/album.twig' %}
                                 {% endfor %}
                                 {% endif %}
                             </div>

@@ -1,0 +1,84 @@
+<div class="media album">
+    <div class="media-left">
+        <a href="{{ url_for('album', { 'album': album.id }) }}" target="_blank">
+            <img
+                class="media-object"
+                src="{{ album.coverItem.sizes.sq150.url ?: album.coverItem.url }}?token={{ token }}"
+                title="{{ album.title }}"
+                alt="{{ album.title }}"/>
+        </a>
+    </div>
+    <div class="media-body info">
+        <h4 class="media-heading">
+            <span class="pull-right">
+            {% if album.itemChange %}
+                {% if album.itemChange.name == 'DELETE' %}
+                <span class="label label-danger">{{ album.itemChange.name }}</span>
+                {% elseif album.itemChange.name == 'CHANGE' %}
+                <span class="label label-warning">{{ album.itemChange.name }}</span>
+                {% elseif album.itemChange.name == 'NEW' %}
+                <span class="label label-primary">{{ album.itemChange.name }}</span>
+                {% elseif album.itemChange.name == 'OK' %}
+                <span class="label label-success">{{ album.itemChange.name }}</span>
+                {% endif %}
+            {% else %}
+                {% if album.public %}
+                    <span class="label label-success">AVALIK</span>
+                {% else %}
+                    <span class="label label-danger">PRIVAATNE</span>
+                {% endif %}
+            {% endif %}
+            </span>
+            <a href="{{ url_for('album', { 'album': album.id }) }}" target="_blank">{{ album.title }}</a>
+        </h4>
+        <div  class="text-muted small">{{ album.description }}</div>
+        <div  class="text-muted small">{{ album.id }} | {{ album.fid }}</div>
+        <div>
+            <span>
+                <i class="glyphicon glyphicon-camera"></i>
+                {{ album.photos }}
+            </span>
+            <span>
+                <i class="glyphicon glyphicon-film"></i>
+                {{ album.videos }}
+            </span>
+        </div>
+        <div class="album-tools">
+            {% if not album.itemChange and album.id %}
+                <a href="{{ full_url_for('root') }}upload/{{ album.id }}" class="fileupload fileinput-button" title="Lae pilte juurde">
+                    <i class="glyphicon glyphicon-open"></i> Upload
+                    <input type="file" name="files[]" accept="image/*" multiple />
+                </a>
+                <a href="{{ url_for('album_delete', { 'provider': provider.id, 'album': album.id }) }}" class="album-delete" title="Eemalda album">
+                    <i class="glyphicon glyphicon-remove"></i> Eemalda album
+                </a>
+                {% if provider.editable %}
+                    <a href="{{ url_for('provider_album', { 'provider': provider.id, 'album': album.id }) }}" title="Muuda">
+                        Muuda
+                    </a>
+                {% endif %}
+                {% if album.public %}
+                    <a href="{{ url_for('provider_album', { 'provider': provider.id, 'album': album.id }) }}" class="album-set-private" title="Määra privaatseks">
+                        Määra privaatseks
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('provider_album', { 'provider': provider.id, 'album': album.id }) }}" class="album-set-public" title="Määra avalikuks">
+                        Määra avalikuks
+                    </a>
+                {% endif %}
+            {% else %}
+                {% if provider.editable and album.itemChange and album.itemChange.name == 'NEW' %}
+                    <a href="{{ url_for('provider_autorotate', { 'provider': provider.id, 'album': album.fid }) }}" title="Autorotate">
+                        <i class="glyphicon glyphicon-retweet"></i> Autorotate
+                    </a>
+                {% endif %}
+                {% if album.itemChange and album.itemChange.name != 'OK' %}
+                <a href="{{ url_for('import_sync', { 'provider': provider.id, 'album': album.fid }) }}" title="Impordi see album">
+                    <i class="glyphicon glyphicon-save"></i> Impordi see album
+                </a>
+                {% endif %}
+            {% endif %}
+        </div>
+        <div class="bar"></div>
+    </div>
+</div>

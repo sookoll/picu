@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Enum\ItemSizeEnum;
+use App\Model\Album;
 use App\Model\Photo;
 use App\Model\PhotoSize;
 use Imagick;
@@ -54,4 +55,5 @@ class ImageService
         }
         $image->setImageOrientation(Imagick::ORIENTATION_TOPLEFT);
     }
+
 }

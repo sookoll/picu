@@ -9,6 +9,8 @@ use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Slim\Exception\HttpNotFoundException;
+use Slim\Psr7\Stream;
 use Slim\Views\Twig;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -60,5 +62,33 @@ abstract class BaseController
         $response->getBody()->write($payload);
         return $response
             ->withHeader('Content-Type', 'application/json');
+    }
+
+    protected function file(Request $request, Response $response, array $source, bool $download = false): Response
+    {
+
+
+        $filename = $source['basename'];
+        $ext = strtolower($source['extension']);
+        $ctype = match ($ext) {
+            'gif' => 'image/gif',
+            'png' => 'image/png',
+            'jpg', 'jpeg' => 'image/jpg',
+            default => throw new HttpNotFoundException($request)
+        };
+        $stat = fstat($source['resource']);
+
+        $newResponse = $response->withHeader('Content-type', $ctype)
+            ->withHeader('Content-length', $stat['size'])
+            ->withAddedHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->withHeader('Cache-Control', 'post-check=0, pre-check=0')
+            ->withHeader('Pragma', 'no-cache');
+
+        if ($download) {
+            $newResponse = $newResponse
+                ->withHeader('Content-Disposition', 'attachment; filename="'.$filename.'"');
+        }
+
+        return $newResponse->withBody((new Stream($source['resource'])));
     }
 }

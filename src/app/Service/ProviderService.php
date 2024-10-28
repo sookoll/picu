@@ -19,6 +19,7 @@ class ProviderService extends BaseService
 
     public function __construct(
         ContainerInterface $container,
+        protected readonly ItemService $itemService,
         protected readonly AlbumService $albumService,
         protected readonly FlickrService $flickrService,
         protected readonly DiskService $diskService,
@@ -32,6 +33,8 @@ class ProviderService extends BaseService
         $this->baseUrl = $baseUrl;
         $this->flickrService->setBaseUrl($baseUrl);
         $this->diskService->setBaseUrl($baseUrl);
+        $this->albumService->setBaseUrl($baseUrl);
+        $this->itemService->setBaseUrl($baseUrl);
     }
 
     /**
@@ -40,6 +43,11 @@ class ProviderService extends BaseService
     public function getProviders(): array
     {
         return $this->providers;
+    }
+
+    public function getItemService(): ItemService
+    {
+        return $this->itemService;
     }
 
     public function getAlbumService(): AlbumService
@@ -133,7 +141,7 @@ class ProviderService extends BaseService
                         $this->albumService->import($provider, $album, $items);
                         break;
                     case ItemChangeEnum::DELETE:
-                        $this->albumService->clear($album);
+                        $this->itemService->deleteAll($album);
                         $this->albumService->delete($album);
                         break;
                 }
@@ -181,15 +189,18 @@ class ProviderService extends BaseService
                 $album->id = Utilities::uid();
                 $album->sort = $key;
                 $album->setItemChange(ItemChangeEnum::NEW);
-            }
-            elseif ($apiService?->albumIsDifferent($album, $dbAlbum)) {
-                $album->id = $dbAlbum->id;
-                $album->sort = $key;
-                $album->setItemChange(ItemChangeEnum::CHANGE);
-            }
-            else {
-                $album->id = $dbAlbum->id;
-                $album->setItemChange(ItemChangeEnum::OK);
+            } else {
+                $dbAlbumItemsList = $this->itemService->getFidList($dbAlbum);
+                $albumItemsList = $apiService?->getItemsFidList($album);
+                if ($apiService?->albumIsDifferent($album, $dbAlbum) || count(array_diff($dbAlbumItemsList, $albumItemsList)) > 0) {
+                    $album->id = $dbAlbum->id;
+                    $album->sort = $key;
+                    $album->setItemChange(ItemChangeEnum::CHANGE);
+                }
+                else {
+                    $album->id = $dbAlbum->id;
+                    $album->setItemChange(ItemChangeEnum::OK);
+                }
             }
             $data[] = $album;
         }

@@ -15,7 +15,7 @@ class Item
     public ItemTypeEnum $type;
     public string $url;
     public int $sort = 0;
-    private ?ItemChangeEnum $itemChange;
+    private ?ItemChangeEnum $itemChange = null;
 
     public function getItemChange(): ?ItemChangeEnum
     {

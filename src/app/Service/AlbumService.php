@@ -6,25 +6,39 @@ use App\Enum\ItemTypeEnum;
 use App\Enum\ProviderEnum;
 use App\Model\Album;
 use App\Model\Photo;
-use App\Model\PhotoSize;
 use App\Model\Provider;
 use Exception;
 use JsonException;
 use PDO;
 use PDOException;
+use Psr\Container\ContainerInterface;
 
 class AlbumService extends BaseService
 {
+    public function __construct(
+        ContainerInterface $container,
+        protected readonly ItemService $itemService,
+    )
+    {
+        parent::__construct($container);
+    }
+
+    public function setBaseUrl(string $baseUrl): void
+    {
+        $this->baseUrl = $baseUrl;
+        $this->itemService->setBaseUrl($baseUrl);
+    }
+
     /**
      * @param Provider|null $provider
-     * @param string|null $albumId
+     * @param string|null $id
      * @param string|null $fid
      * @param bool $onlyPublic
      * @return Album[]
      */
     public function getList(
         Provider $provider = null,
-        string $albumId = null,
+        string $id = null,
         string $fid = null,
         bool $onlyPublic = false,
     ): array
@@ -39,9 +53,9 @@ class AlbumService extends BaseService
             $params['provider'] = $provider->getId();
         }
 
-        if ($albumId) {
+        if ($id) {
             $where['pa.id'] = ['=', ':id'];
-            $params['id'] = $albumId;
+            $params['id'] = $id;
         }
 
         if ($fid) {
@@ -105,7 +119,7 @@ class AlbumService extends BaseService
             $album->photos = $row['photos'];
             $album->videos = $row['videos'];
             $album->public = $row['public'];
-            $coverItem = $this->getItem($album, $album->cover);
+            $coverItem = $this->itemService->getByFid($album, $album->cover);
             if ($coverItem) {
                 $album->setCoverItem($coverItem);
             }
@@ -115,9 +129,9 @@ class AlbumService extends BaseService
         return $albums;
     }
 
-    public function get(Provider $provider, string $albumId): ?Album
+    public function get(string $albumId): ?Album
     {
-        $result = $this->getList($provider, $albumId);
+        $result = $this->getList(null, $albumId);
 
         return $result[0] ?? null;
     }
@@ -199,6 +213,11 @@ class AlbumService extends BaseService
         }
     }
 
+    /**
+     * @param Album $album
+     * @return void
+     * @throws Exception
+     */
     public function delete(Album $album): void
     {
         if (!isset($album->id)) {
@@ -218,204 +237,22 @@ class AlbumService extends BaseService
         }
     }
 
-    public function getItemsList(Album $album, string $id = null, string $fid = null): array
-    {
-        $where = [
-            'album' => ['=', ':album']
-        ];
-        $params = [
-            'album' => $album->id
-        ];
-
-        if ($id) {
-            $where['id'] = ['=', ':id'];
-            $params['id'] = $id;
-        }
-
-        if ($fid) {
-            $where['fid'] = ['=', ':fid'];
-            $params['fid'] = $fid;
-        }
-
-        $conditions = Utilities::serializeStatementCondition($where);
-
-        $sql = "SELECT * FROM picu_item WHERE {$conditions} ORDER BY sort";
-        try {
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute($params);
-        } catch (PDOException $e) {
-            $this->logger->error('Get provider items failed: ' . $e->getMessage());
-        }
-
-        $items = [];
-        while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            try {
-                $itemTypeEnum = ItemTypeEnum::from($row['type']);
-            } catch (Exception $e) {
-                $this->logger->error('Get stored items error: ' . $e->getMessage());
-                continue;
-            }
-            $item = match ($itemTypeEnum) {
-                ItemTypeEnum::IMAGE => new Photo(),
-                default => null,
-            };
-            if ($item) {
-                $item->id = $row['id'];
-                $item->fid = $row['fid'];
-                $item->album = $row['album'];
-                $item->title = $row['title'];
-                $item->description = $row['description'];
-                $item->type = $itemTypeEnum;
-                $item->url = $row['url'];
-                $item->width = $row['width'];
-                $item->height = $row['height'];
-                $metadata = $row['metadata'] && $row['metadata'] !== '' ? json_decode($row['metadata'], true) : null;
-                if (isset($metadata['sizes'])) {
-                    $sizes = [];
-                    foreach ($metadata['sizes'] as $key => $val) {
-                        $size = new PhotoSize();
-                        $size->url = $val['url'];
-                        $size->width = $val['width'];
-                        $size->height = $val['height'];
-                        $sizes[$key] = $size;
-                    }
-                    $item->sizes = $sizes;
-                }
-                $item->datetaken = $row['datetaken'];
-                $item->sort = $row['sort'];
-                $items[] = $item;
-            }
-        }
-
-        return $items;
-    }
-
-    public function clear(Album $album, array $exceptFids = []): void
-    {
-        $where = [
-            'album' => ['=', '?']
-        ];
-        $params = [$album->id];
-
-        if (count($exceptFids)) {
-            $placeholders = implode(', ', array_fill(0, count($exceptFids), '?'));
-            $where['fid'] = ['NOT IN', "($placeholders)"];
-            $params = array_merge($params, $exceptFids);
-        }
-
-        $conditions = Utilities::serializeStatementCondition($where);
-        $sql = "
-            DELETE FROM picu_item WHERE {$conditions}
-        ";
-        try {
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute($params);
-        } catch (PDOException $e) {
-            $this->logger->error('Clear album failed: ' . $e->getMessage());
-        }
-    }
-
     public function import(Provider $provider, Album $album, array $items): void
     {
-        // delete
-        $this->clear($album, array_column($items, 'fid'));
+        // delete what's not in imported list
+        $this->itemService->deleteAll($album, array_column($items, 'fid'));
 
         // upsert
         foreach ($items as $item) {
-            $dbItems = $this->getItemsList($album, null, $item->fid);
+            $dbItems = $this->itemService->getList($album, null, $item->fid);
             if (count($dbItems) === 0) {
-                $this->createItem($item);
+                $this->itemService->create($item);
             }
             // if not locally editable, then rewrite item
             elseif (!$provider->isEditable() && count($dbItems) === 1) {
                 $item->id = $dbItems[0]->id;
-                $this->updateItem($item);
+                $this->itemService->update($item);
             }
-        }
-    }
-
-    public function getItem(Album $album, string $fid): ?Photo
-    {
-        $result = $this->getItemsList($album, null, $fid);
-
-        return $result[0] ?? null;
-    }
-
-    /**
-     * @throws JsonException
-     */
-    private function createItem(Photo $item): void
-    {
-        if (!isset($item->id)) {
-            $item->id = Utilities::uid();
-        }
-        $sql = "
-            INSERT INTO picu_item (id, fid, album, title, description, type, datetaken, url, width, height, metadata, sort)
-            VALUES (:id, :fid, :album, :title, :description, :type, :datetaken, :url, :width, :height, :metadata, :sort)
-        ";
-        $params = [
-            'id' => $item->id,
-            'fid' => $item->fid,
-            'album' => $item->album,
-            'title' => $item->title,
-            'description' => $item->description ?? null,
-            'type' => $item->type->value,
-            'datetaken' => isset($item->datetaken) ? $item->datetaken->format('Y-m-d H:i:s') : null,
-            'url' => $item->url,
-            'width' => $item->width,
-            'height' => $item->height,
-            'metadata' => $item->sizes ? json_encode(['sizes' => $item->sizes], JSON_THROW_ON_ERROR) : null,
-            'sort' => $item->sort,
-        ];
-        $intValues = ['width', 'height', 'sort'];
-        try {
-            $stmt = $this->db->prepare($sql);
-            foreach ($params as $key => $val) {
-                $stmt->bindValue($key, $val, in_array($key, $intValues) ? PDO::PARAM_INT : PDO::PARAM_STR);
-            }
-            $stmt->execute();
-        } catch (PDOException $e) {
-            $this->logger->error('Add item failed: ' . $e->getMessage());
-        }
-    }
-
-    private function updateItem(Photo $item): void
-    {
-        if (!isset($item->id)) {
-            throw new RuntimeException("Item update failed, missing id: $item->album, $item->fid");
-        }
-        $sql = "
-            UPDATE picu_item SET
-                title = :title,
-                description = :description,
-                datetaken = :datetaken,
-                url = :url,
-                width = :width,
-                height = :height,
-                metadata = :metadata,
-                sort = :sort
-            WHERE id = :id
-        ";
-        $params = [
-            'id' => $item->id,
-            'title' => $item->title,
-            'description' => $item->description ?? null,
-            'datetaken' => isset($item->datetaken) ? $item->datetaken->format('Y-m-d H:i:s') : null,
-            'url' => $item->url,
-            'width' => $item->width,
-            'height' => $item->height,
-            'metadata' => $item->sizes ? json_encode(['sizes' => $item->sizes], JSON_THROW_ON_ERROR) : null,
-            'sort' => $item->sort,
-        ];
-        $intValues = ['width', 'height', 'sort'];
-        try {
-            $stmt = $this->db->prepare($sql);
-            foreach ($params as $key => $val) {
-                $stmt->bindValue($key, $val, in_array($key, $intValues) ? PDO::PARAM_INT : PDO::PARAM_STR);
-            }
-            $stmt->execute();
-        } catch (PDOException $e) {
-            $this->logger->error('Update item failed: ' . $e->getMessage());
         }
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Service\AlbumService;
+use App\Service\ItemService;
 use App\Service\Utilities;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -12,7 +13,11 @@ use Slim\Psr7\Stream;
 
 class GalleryController extends BaseController
 {
-    public function __construct(ContainerInterface $container, protected AlbumService $service)
+    public function __construct(
+        ContainerInterface $container,
+        protected AlbumService $albumService,
+        protected ItemService $itemService,
+    )
     {
         parent::__construct($container);
     }
@@ -21,10 +26,11 @@ class GalleryController extends BaseController
     {
         $albumFid = $args['album'] ?? null;
         if ($albumFid) {
-            $this->service->setBaseUrl($request->getAttribute('base_url'));
-            $album = $this->service->getByFid($albumFid, true);
+            $this->albumService->setBaseUrl($request->getAttribute('base_url'));
+            $this->itemService->setBaseUrl($request->getAttribute('base_url'));
+            $album = $this->albumService->getByFid($albumFid, true);
             if ($album) {
-                $items = $this->service->getItemsList($album);
+                $items = $this->itemService->getList($album);
 
                 return $this->render($request, $response, 'album.twig', [
                     'page' => 'set',
@@ -44,7 +50,7 @@ class GalleryController extends BaseController
         if (!$album || !$photo) {
             throw new HttpNotFoundException($request);
         }
-        $provider = $this->service->getProviderByAlbumId($album);
+        $provider = $this->albumService->getProviderByAlbumId($album);
 
         if ($provider) {
             $photoset = $provider->getMedia($album, $photo);
@@ -70,7 +76,7 @@ class GalleryController extends BaseController
         if (!$album || !$photo) {
             throw new HttpNotFoundException($request);
         }
-        $provider = $this->service->getProviderByAlbumId($album);
+        $provider = $this->albumService->getProviderByAlbumId($album);
 
         if ($provider) {
             $photoset = $provider->getMedia($album, $photo);

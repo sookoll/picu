@@ -80,7 +80,6 @@ return static function (ContainerBuilder $containerBuilder) {
             'disk' => [
                 'enabled' => $_ENV['DISK_ENABLED'] === 'true',
                 'editable' => true,
-                'root_path' => $rootPath,
                 'import_path' => $_ENV['DISK_GALLERY_PATH'],
                 'cache_path' => $_ENV['DISK_CACHE_PATH'],
                 'accept_image_file_types' => '/\.(gif|jpe?g|tif|png)$/i',
@@ -108,7 +107,7 @@ return static function (ContainerBuilder $containerBuilder) {
         ],
         'download' => [
             'referer' => $_ENV['CURL_REFERER'],
-        ]
+        ],
     ];
 
     // Global Settings Object

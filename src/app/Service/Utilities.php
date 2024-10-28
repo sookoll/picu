@@ -93,14 +93,15 @@ class Utilities
         $input = microtime();
         $length = 8;
         // Create a raw binary sha256 hash and base64 encode it.
-        $hash_base64 = base64_encode( hash( 'sha256', $input, true ) );
+        $hash_base64 = base64_encode(hash('sha256', $input, true));
         // Replace non-urlsafe chars to make the string urlsafe.
-        $hash_urlsafe = strtr( $hash_base64, '+/', '-_' );
+        $hash = strtr($hash_base64, '+/_', '---');
         // Trim base64 padding characters from the end.
-        $hash_urlsafe = rtrim( $hash_urlsafe, '=' );
+        $hash = rtrim($hash, '=');
+        $hash = rtrim($hash, '0123456789-');
 
         // Shorten the string before returning.
-        return substr( $hash_urlsafe, 0, $length );
+        return substr( $hash, 0, $length );
     }
 
 }

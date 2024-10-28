@@ -13,7 +13,10 @@ use Twig\Error\SyntaxError;
 
 final class AdminController extends BaseController
 {
-    public function __construct(ContainerInterface $container, protected readonly ProviderService $service)
+    public function __construct(
+        ContainerInterface $container,
+        protected readonly ProviderService $service,
+    )
     {
         parent::__construct($container);
         Utilities::ensureDirectoriesExists($this->settings);
@@ -42,7 +45,11 @@ final class AdminController extends BaseController
             }
         }
 
-        return $this->render($request, $response, 'admin/admin.twig', ['page' => 'admin', 'providers' => $providers]);
+        return $this->render($request, $response, 'admin/admin.twig', [
+            'page' => 'admin',
+            'token' => $this->settings['api_token'],
+            'providers' => $providers
+        ]);
     }
 
 
@@ -52,7 +59,7 @@ final class AdminController extends BaseController
         $providerEnum = ProviderEnum::from($args['provider']);
         $provider = $this->service->getProvider($providerEnum);
         if ($provider->isEnabled() && !$provider->isAuthenticated()) {
-            return $this->service->getProviderApiService($providerEnum)->authenticate($request, $response);
+            return $this->service->getProviderApiService($providerEnum)?->authenticate($request, $response);
         }
 
         return $response->withStatus(400);
@@ -154,9 +161,9 @@ final class AdminController extends BaseController
             $provider->isEnabled() &&
             $provider->isAuthenticated()
         ) {
-            $album = $this->service->getAlbumService()->get($provider, $albumId);
+            $album = $this->service->getAlbumService()->get($albumId);
             if ($album) {
-                $items = $this->service->getAlbumService()->getItemsList($album);
+                $items = $this->service->getItemService()->getList($album);
                 $data = [
                     'page' => 'admin',
                     'provider' => [
@@ -171,7 +178,7 @@ final class AdminController extends BaseController
             }
         }
 
-        return $this->render($request, $response, 'admin/editAlbum.twig', $data);
+        return $this->render($request, $response, 'admin/album.twig', $data);
     }
 
     public function updateAlbum(Request $request, Response $response, array $args = []): Response
@@ -185,7 +192,7 @@ final class AdminController extends BaseController
             $provider->isEnabled() &&
             $provider->isAuthenticated()
         ) {
-            $album = $this->service->getAlbumService()->get($provider, $albumId);
+            $album = $this->service->getAlbumService()->get($albumId);
             if ($album) {
                 $data = $request->getParsedBody();
                 foreach ($data as $key => $val) {
@@ -219,9 +226,9 @@ final class AdminController extends BaseController
             $provider->isEnabled() &&
             $provider->isAuthenticated()
         ) {
-            $album = $this->service->getAlbumService()->get($provider, $albumId);
+            $album = $this->service->getAlbumService()->get($albumId);
             if ($album) {
-                $this->service->getAlbumService()->clear($album);
+                $this->service->getItemService()->deleteAll($album);
                 $this->service->getAlbumService()->delete($album);
 
                 return $response->withStatus(204);

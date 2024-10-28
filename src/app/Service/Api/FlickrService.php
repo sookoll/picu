@@ -150,28 +150,33 @@ class FlickrService extends BaseService implements ApiInterface
     public function getItems(Album $album): array
     {
         $items = [];
-        $extras = "date_taken, geo, tags, url_o, url_{$this->conf['vb_size']}, url_z, url_c";
-        $photos = $this->phpFlickr->photosets()->getPhotos($album->fid, $album->owner, $extras);
-        if ($photos && isset($photos['photo'])) {
+        $itemsList = $this->fetchItems($album);
+
+        foreach ($itemsList as $i => $media) {
             // calculate thumb parameters, originals are wrong in portrait
-            foreach ($photos['photo'] as $i => $media) {
-                $this->calculateImageSizes($media);
-                $item = new Photo();
-                $item->fid = $media['id'];
-                $item->album = $album->id;
-                $item->title = $media['title'];
-                $item->type = ItemTypeEnum::IMAGE;
-                $item->datetaken = $media['datetaken'];
-                $item->url = $media['url_o'];
-                $item->width = $media['width_o'];
-                $item->height = $media['height_o'];
-                $item->sizes = $this->mapSizes($media);
-                $item->sort = $i;
-                $items[] = $item;
-            }
+            $this->calculateImageSizes($media);
+            $item = new Photo();
+            $item->fid = $media['id'];
+            $item->album = $album->id;
+            $item->title = $media['title'];
+            $item->type = ItemTypeEnum::IMAGE;
+            $item->datetaken = $media['datetaken'];
+            $item->url = $media['url_o'];
+            $item->width = $media['width_o'];
+            $item->height = $media['height_o'];
+            $item->sizes = $this->mapSizes($media);
+            $item->sort = $i;
+            $items[] = $item;
         }
 
         return $items;
+    }
+
+    public function getItemsFidList(Album $album): array
+    {
+        $itemsList = $this->fetchItems($album);
+
+        return array_column($itemsList, 'id');
     }
 
     public function albumIsDifferent(Album $album, Album $compareAlbum): bool
@@ -185,6 +190,30 @@ class FlickrService extends BaseService implements ApiInterface
 
     public function autorotate(string $albumId): void
     {
+    }
+
+
+    public function readFile(Album $album, Photo $item, ItemSizeEnum $sizeEnum = null): array
+    {
+        $url = ($sizeEnum && isset($item->sizes[$sizeEnum->value]))
+            ? $item->sizes[$sizeEnum->value]->url
+            : $item->url;
+        $file = pathinfo($url);
+        $file['resource'] = Utilities::download($url, $this->settings['download']['referer']);
+
+        return $file;
+    }
+
+    private function fetchItems(Album $album)
+    {
+        $sizesList = array_map(static fn($size) => "url_$size", array_values($this->conf['sizes']));
+        $extras = 'date_taken, geo, tags, url_o, ' . implode(', ', $sizesList);
+        $photos = $this->phpFlickr->photosets()->getPhotos($album->fid, $album->owner, $extras);
+        if ($photos && isset($photos['photo'])) {
+            return $photos['photo'];
+        }
+
+        return [];
     }
 
     private function getItemUrl($set, $size = 'q'): string

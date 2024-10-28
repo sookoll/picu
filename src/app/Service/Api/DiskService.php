@@ -37,6 +37,17 @@ class DiskService extends BaseService implements ApiInterface
 
     public function init(): bool
     {
+        // check directories
+        $importPath = $this->settings['rootPath'] . $this->conf['import_path'];
+        if (!file_exists($importPath) && !mkdir($importPath, 0777, true) && !is_dir($importPath)) {
+            throw new \RuntimeException(sprintf('Directory "%s" was not created', $importPath));
+        }
+
+        $cachePath = $this->settings['rootPath'] . $this->conf['cache_path'];
+        if (!file_exists($cachePath) && !mkdir($cachePath, 0777, true) && !is_dir($cachePath)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $cachePath));
+        }
+
         return true;
     }
 
@@ -98,7 +109,9 @@ class DiskService extends BaseService implements ApiInterface
             $item = new Photo();
             $item->id = Utilities::uid();
             $item->fid = $media['name'];
-            $item->album = $album->id;
+            if (isset($album->id)) {
+                $item->album = $album->id;
+            }
             $item->title = $media['name'];
             $item->type = ItemTypeEnum::IMAGE;
             if (isset($meta['exif']['DateTimeOriginal'])) {
@@ -116,11 +129,17 @@ class DiskService extends BaseService implements ApiInterface
         return $items;
     }
 
+    public function getItemsFidList(Album $album): array
+    {
+        $itemsList = $this->getItemsByAlbumId($album->fid);
+
+        return array_column($itemsList, 'name');
+    }
+
     public function albumIsDifferent(Album $album, Album $compareAlbum): bool
     {
         return $album->photos !== $compareAlbum->photos ||
-            $album->videos !== $compareAlbum->videos ||
-            $album->sort !== $compareAlbum->sort;
+            $album->videos !== $compareAlbum->videos;
     }
 
     public function autorotate(string $albumId): void
@@ -135,10 +154,35 @@ class DiskService extends BaseService implements ApiInterface
                 ImageService::autorotate($img);
                 unlink($item['fullPath']);
                 $img->writeImage($item['fullPath']);
+                $img->clear();
             } catch (ImagickException $e) {
                 $this->logger->error('Autorotate image failed: ' . $e->getMessage());
             }
         }
+    }
+
+    public function readFile(Album $album, Photo $item, ItemSizeEnum $sizeEnum = null): array
+    {
+        $path = "{$this->settings['rootPath']}{$this->conf['import_path']}/{$album->fid}/{$item->fid}";
+        $source = pathinfo($path);
+
+        if ($sizeEnum && isset($item->sizes[$sizeEnum->value])) {
+            $size = $item->sizes[$sizeEnum->value];
+            $img = ImageService::create($path);
+            if ($sizeEnum->value === 'sq150') {
+                $img->cropThumbnailImage($size->width, $size->height);
+            }
+            else {
+                $img->thumbnailImage($size->width, $size->height);
+            }
+            $path = $this->settings['rootPath'] . $this->cacheFileName($sizeEnum, $item, $source['extension']);
+            file_put_contents($path, $img);
+            $img->clear();
+        }
+
+        $source['resource'] = fopen($path, 'rb');
+
+        return $source;
     }
 
     private function getItemUrl($item): string
@@ -149,7 +193,7 @@ class DiskService extends BaseService implements ApiInterface
     private function getListOnDisk(string $pathPart): array
     {
         $data = [];
-        $path = "{$this->conf['root_path']}$pathPart";
+        $path = "{$this->settings['rootPath']}$pathPart";
         if (!is_dir($path)) {
             $this->logger->error('Read list failed from: ' . $path);
             return $data;
@@ -186,6 +230,8 @@ class DiskService extends BaseService implements ApiInterface
             $img->getImageWidth(),
             $img->getImageHeight()
         ];
+
+        $img->clear();
 
         $exif = [];
         foreach ($exifArray as $key => $value) {
@@ -239,8 +285,7 @@ class DiskService extends BaseService implements ApiInterface
     {
         $size = new PhotoSize();
         $ext = pathinfo($item->url, PATHINFO_EXTENSION);
-        $path = $this->conf['cache_path'];
-        $size->url = $this->baseUrl . "$path/{$item->id}_{$sizeEnum->value}.$ext";
+        $size->url = $this->baseUrl . $this->cacheFileName($sizeEnum, $item, $ext);
         $providerSize = $this->conf['sizes'][$sizeEnum->value];
 
         if ($sizeEnum->value === 'sq150') {
@@ -257,5 +302,12 @@ class DiskService extends BaseService implements ApiInterface
         }
 
         return $size;
+    }
+
+    private function cacheFileName(ItemSizeEnum $sizeEnum, Photo $item, string $ext): string
+    {
+        $path = $this->conf['cache_path'];
+
+        return "$path/{$item->id}_{$sizeEnum->value}." . strtolower($ext);
     }
 }
