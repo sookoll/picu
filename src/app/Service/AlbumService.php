@@ -6,9 +6,9 @@ use App\Enum\ItemTypeEnum;
 use App\Enum\ProviderEnum;
 use App\Model\Album;
 use App\Model\Photo;
+use App\Model\PhotoSize;
 use App\Model\Provider;
-use DateTime;
-use http\Exception\RuntimeException;
+use Exception;
 use JsonException;
 use PDO;
 use PDOException;
@@ -16,12 +16,18 @@ use PDOException;
 class AlbumService extends BaseService
 {
     /**
-     * @param Provider $provider
+     * @param Provider|null $provider
      * @param string|null $albumId
-     * @param bool $public
+     * @param string|null $fid
+     * @param bool $onlyPublic
      * @return Album[]
      */
-    public function getList(Provider $provider = null, string $albumId = null, bool $onlyPublic = false): array
+    public function getList(
+        Provider $provider = null,
+        string $albumId = null,
+        string $fid = null,
+        bool $onlyPublic = false,
+    ): array
     {
         $where = [
             '1' => ['=', '1']
@@ -36,6 +42,11 @@ class AlbumService extends BaseService
         if ($albumId) {
             $where['pa.id'] = ['=', ':id'];
             $params['id'] = $albumId;
+        }
+
+        if ($fid) {
+            $where['pa.fid'] = ['=', ':fid'];
+            $params['fid'] = $fid;
         }
 
         if ($onlyPublic) {
@@ -94,6 +105,10 @@ class AlbumService extends BaseService
             $album->photos = $row['photos'];
             $album->videos = $row['videos'];
             $album->public = $row['public'];
+            $coverItem = $this->getItem($album, $album->cover);
+            if ($coverItem) {
+                $album->setCoverItem($coverItem);
+            }
             $albums[] = $album;
         }
 
@@ -103,6 +118,13 @@ class AlbumService extends BaseService
     public function get(Provider $provider, string $albumId): ?Album
     {
         $result = $this->getList($provider, $albumId);
+
+        return $result[0] ?? null;
+    }
+
+    public function getByFid(string $fid, $onlyPublic = false): ?Album
+    {
+        $result = $this->getList(null, null, $fid, $onlyPublic);
 
         return $result[0] ?? null;
     }
@@ -142,7 +164,7 @@ class AlbumService extends BaseService
     public function update(Album $album): void
     {
         if (!isset($album->id)) {
-            throw new RuntimeException("Album update failed, missing id: {$album->getProvider()->getId()}, $album->fid");
+            throw new Exception("Album update failed, missing id: {$album->getProvider()->getId()}, $album->fid");
         }
         $sql = "
             UPDATE picu_album SET
@@ -180,7 +202,7 @@ class AlbumService extends BaseService
     public function delete(Album $album): void
     {
         if (!isset($album->id)) {
-            throw new RuntimeException("Album delete failed, missing id: {$album->getProvider()->getId()}, $album->fid");
+            throw new Exception("Album delete failed, missing id: {$album->getProvider()->getId()}, $album->fid");
         }
         $sql = "
             DELETE FROM picu_album WHERE id = :id
@@ -196,7 +218,7 @@ class AlbumService extends BaseService
         }
     }
 
-    public function getItemsList(Album $album, string $fid = null): array
+    public function getItemsList(Album $album, string $id = null, string $fid = null): array
     {
         $where = [
             'album' => ['=', ':album']
@@ -204,6 +226,11 @@ class AlbumService extends BaseService
         $params = [
             'album' => $album->id
         ];
+
+        if ($id) {
+            $where['id'] = ['=', ':id'];
+            $params['id'] = $id;
+        }
 
         if ($fid) {
             $where['fid'] = ['=', ':fid'];
@@ -221,11 +248,10 @@ class AlbumService extends BaseService
         }
 
         $items = [];
-
         while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             try {
                 $itemTypeEnum = ItemTypeEnum::from($row['type']);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->logger->error('Get stored items error: ' . $e->getMessage());
                 continue;
             }
@@ -243,13 +269,20 @@ class AlbumService extends BaseService
                 $item->url = $row['url'];
                 $item->width = $row['width'];
                 $item->height = $row['height'];
-                if (!empty($row['datetaken'])) {
-                    $item->datetaken = DateTime::createFromFormat('Y-m-d H:i:s', $row['datetaken']);
+                $metadata = $row['metadata'] && $row['metadata'] !== '' ? json_decode($row['metadata'], true) : null;
+                if (isset($metadata['sizes'])) {
+                    $sizes = [];
+                    foreach ($metadata['sizes'] as $key => $val) {
+                        $size = new PhotoSize();
+                        $size->url = $val['url'];
+                        $size->width = $val['width'];
+                        $size->height = $val['height'];
+                        $sizes[$key] = $size;
+                    }
+                    $item->sizes = $sizes;
                 }
-                $item->metadata = $row['metadata'] && $row['metadata'] !== '' ? json_decode($row['metadata'], true) : null;
+                $item->datetaken = $row['datetaken'];
                 $item->sort = $row['sort'];
-                $item->changed = DateTime::createFromFormat('Y-m-d H:i:s', $row['changed']);
-                $item->added = DateTime::createFromFormat('Y-m-d H:i:s', $row['added']);
                 $items[] = $item;
             }
         }
@@ -289,7 +322,7 @@ class AlbumService extends BaseService
 
         // upsert
         foreach ($items as $item) {
-            $dbItems = $this->getItemsList($album, $item->fid);
+            $dbItems = $this->getItemsList($album, null, $item->fid);
             if (count($dbItems) === 0) {
                 $this->createItem($item);
             }
@@ -299,6 +332,13 @@ class AlbumService extends BaseService
                 $this->updateItem($item);
             }
         }
+    }
+
+    public function getItem(Album $album, string $fid): ?Photo
+    {
+        $result = $this->getItemsList($album, null, $fid);
+
+        return $result[0] ?? null;
     }
 
     /**
@@ -324,7 +364,7 @@ class AlbumService extends BaseService
             'url' => $item->url,
             'width' => $item->width,
             'height' => $item->height,
-            'metadata' => $item->metadata ? json_encode($item->metadata, JSON_THROW_ON_ERROR) : null,
+            'metadata' => $item->sizes ? json_encode(['sizes' => $item->sizes], JSON_THROW_ON_ERROR) : null,
             'sort' => $item->sort,
         ];
         $intValues = ['width', 'height', 'sort'];
@@ -364,7 +404,7 @@ class AlbumService extends BaseService
             'url' => $item->url,
             'width' => $item->width,
             'height' => $item->height,
-            'metadata' => $item->metadata ? json_encode($item->metadata, JSON_THROW_ON_ERROR) : null,
+            'metadata' => $item->sizes ? json_encode(['sizes' => $item->sizes], JSON_THROW_ON_ERROR) : null,
             'sort' => $item->sort,
         ];
         $intValues = ['width', 'height', 'sort'];

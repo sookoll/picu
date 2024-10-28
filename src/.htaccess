@@ -3,7 +3,7 @@
     #RewriteBase /picu
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^media/p(\d+)/cache/([^.]+)\.card\.jpg$ index.php?r=backend/product/imageNew/$1/$2 [R,L]
+    RewriteRule ^media/cache/([^.]+)\.card\.jpg$ index.php?r=backend/product/imageNew/$1/$2 [R,L]
     RewriteRule . index.php [L]
 </IfModule>
 

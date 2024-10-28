@@ -29,6 +29,7 @@ final class AdminController extends BaseController
     {
         // enabled service providers
         $providers = [];
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
         foreach ($this->service->getProviders() as $key => $provider) {
             if ($provider->isEnabled()) {
                 $providers[$key] = [
@@ -47,6 +48,7 @@ final class AdminController extends BaseController
 
     public function login(Request $request, Response $response, array $args = []): Response
     {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
         $providerEnum = ProviderEnum::from($args['provider']);
         $provider = $this->service->getProvider($providerEnum);
         if ($provider->isEnabled() && !$provider->isAuthenticated()) {
@@ -58,12 +60,13 @@ final class AdminController extends BaseController
 
     public function logout(Request $request, Response $response, array $args = []): Response
     {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
         $providerEnum = ProviderEnum::from($args['provider']);
         $provider = $this->service->getProvider($providerEnum);
         if (
             $provider->isEnabled() &&
             $provider->isAuthenticated() &&
-            $this->service->getProviderApiService($providerEnum)->unAuthenticate()
+            $this->service->getProviderApiService($providerEnum)?->unAuthenticate()
         ) {
             return Utilities::redirect('admin', $request, $response);
         }
@@ -73,6 +76,7 @@ final class AdminController extends BaseController
 
     public function validate(Request $request, Response $response, array $args = []): Response
     {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
         $providerEnum = ProviderEnum::from($args['provider']);
         $provider = $this->service->getProvider($providerEnum);
         $data = [];
@@ -80,7 +84,6 @@ final class AdminController extends BaseController
             $provider->isEnabled() &&
             $provider->isAuthenticated()
         ) {
-            $this->service->setBaseUrl($request->getAttribute('base_url'));
             $data = [
                 'page' => 'admin',
                 'provider' => [
@@ -98,6 +101,7 @@ final class AdminController extends BaseController
 
     public function import(Request $request, Response $response, array $args = []): Response
     {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
         $providerEnum = ProviderEnum::from($args['provider']);
         $provider = $this->service->getProvider($providerEnum);
         $album = $args['album'] ?? null;
@@ -105,7 +109,6 @@ final class AdminController extends BaseController
             $provider->isEnabled() &&
             $provider->isAuthenticated()
         ) {
-            $this->service->setBaseUrl($request->getAttribute('base_url'));
             if ($this->service->sync($providerEnum, $album)) {
                 return Utilities::redirect('import_validate', $request, $response, ['provider' => $provider->getId()]);
             }
@@ -116,6 +119,7 @@ final class AdminController extends BaseController
 
     public function autorotate(Request $request, Response $response, array $args = []): Response
     {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
         $providerEnum = ProviderEnum::from($args['provider']);
         $provider = $this->service->getProvider($providerEnum);
         $album = $args['album'] ?? null;
@@ -124,7 +128,6 @@ final class AdminController extends BaseController
             $provider->isEnabled() &&
             $provider->isAuthenticated()
         ) {
-            $this->service->setBaseUrl($request->getAttribute('base_url'));
             if ($this->service->autorotate($providerEnum, $album)) {
                 return Utilities::redirect('import_validate', $request, $response, ['provider' => $provider->getId()]);
             }
@@ -135,11 +138,13 @@ final class AdminController extends BaseController
 
     public function upload(Request $request, Response $response, array $args = []): Response
     {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
         return $response->withStatus(400);
     }
 
     public function album(Request $request, Response $response, array $args = []): Response
     {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
         $providerEnum = ProviderEnum::from($args['provider']);
         $provider = $this->service->getProvider($providerEnum);
         $albumId = $args['album'] ?? null;
@@ -149,7 +154,6 @@ final class AdminController extends BaseController
             $provider->isEnabled() &&
             $provider->isAuthenticated()
         ) {
-            $this->service->setBaseUrl($request->getAttribute('base_url'));
             $album = $this->service->getAlbumService()->get($provider, $albumId);
             if ($album) {
                 $items = $this->service->getAlbumService()->getItemsList($album);
@@ -172,6 +176,7 @@ final class AdminController extends BaseController
 
     public function updateAlbum(Request $request, Response $response, array $args = []): Response
     {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
         $providerEnum = ProviderEnum::from($args['provider']);
         $provider = $this->service->getProvider($providerEnum);
         $albumId = $args['album'] ?? null;
@@ -205,6 +210,7 @@ final class AdminController extends BaseController
 
     public function delete(Request $request, Response $response, array $args = []): Response
     {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
         $providerEnum = ProviderEnum::from($args['provider']);
         $provider = $this->service->getProvider($providerEnum);
         $albumId = $args['album'] ?? null;

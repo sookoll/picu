@@ -3,7 +3,7 @@
         <a href="{{ url_for('album', { 'album': album.id }) }}" target="_blank">
             <img
                 class="media-object"
-                src="{{ album.cover }}"
+                src="{{ album.coverItem.url }}"
                 title="{{ album.title }}"
                 alt="{{ album.title }}"/>
         </a>

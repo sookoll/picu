@@ -2,6 +2,9 @@
 
 namespace App\Service;
 
+use App\Enum\ItemSizeEnum;
+use App\Model\Photo;
+use App\Model\PhotoSize;
 use Imagick;
 use ImagickException;
 

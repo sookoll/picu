@@ -2,7 +2,7 @@
 
 namespace App\Controller;
 
-use App\Service\ProviderService;
+use App\Service\AlbumService;
 use App\Service\Utilities;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -12,29 +12,26 @@ use Slim\Psr7\Stream;
 
 class GalleryController extends BaseController
 {
-    public function __construct(ContainerInterface $container, private readonly ProviderService $service)
+    public function __construct(ContainerInterface $container, protected AlbumService $service)
     {
         parent::__construct($container);
-
-        $this->service->initProviders();
     }
 
     public function album(Request $request, Response $response, array $args = []): Response
     {
-        $album = $args['album'];
-        $provider = $this->service->getProviderByAlbumId($album);
+        $albumFid = $args['album'] ?? null;
+        if ($albumFid) {
+            $this->service->setBaseUrl($request->getAttribute('base_url'));
+            $album = $this->service->getByFid($albumFid, true);
+            if ($album) {
+                $items = $this->service->getItemsList($album);
 
-        if ($provider) {
-            $photoset = $provider->getMedia($album, $args['photo'] ?? null);
-            if (!$photoset) {
-                throw new HttpNotFoundException($request);
+                return $this->render($request, $response, 'album.twig', [
+                    'page' => 'set',
+                    'album' => $album,
+                    'items' => $items
+                ]);
             }
-            return $this->render($request, $response, 'album.twig', [
-                'page' => 'set',
-                'title' => $photoset['title'],
-                'conf' => $this->settings,
-                'set' => $photoset,
-            ]);
         }
 
         return $response->withStatus(404);

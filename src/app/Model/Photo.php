@@ -7,8 +7,7 @@ use DateTime;
 class Photo extends Item
 {
     public string $album;
-    public array $metadata;
-    public ?DateTime $datetaken;
+    public ?string $datetaken;
     public int $height;
     public int $width;
     /** @var PhotoSize[] */

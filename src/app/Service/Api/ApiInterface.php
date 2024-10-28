@@ -16,8 +16,8 @@ interface ApiInterface
     //public function syncCache(string $album = null): bool;
     //public function removeCache(string $album = null): bool;
     //public function albumExists(string $album): bool;
-    public function getAlbums(string $baseUrl): array;
-    public function getItems(Album $album, string $baseUrl): array;
+    public function getAlbums(): array;
+    public function getItems(Album $album): array;
     public function albumIsDifferent(Album $album, Album $compareAlbum): bool;
     public function autorotate(string $albumId): void;
 }

@@ -37,6 +37,18 @@
         })
     });
 
+    $('#admin .thumbs').on('jg.complete', function (e) {
+        $('img.lazy').lazyload({
+            threshold : 200,
+            effect : 'fadeIn'
+        });
+    }).on('jg.resize', function (e) {
+        $('img.lazy').lazyload({
+            threshold : 200,
+            effect : 'fadeIn'
+        });
+    });
+
 
     $('.fileupload').each(function () {
 

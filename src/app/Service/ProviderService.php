@@ -27,6 +27,13 @@ class ProviderService extends BaseService
         parent::__construct($container);
     }
 
+    public function setBaseUrl(string $baseUrl): void
+    {
+        $this->baseUrl = $baseUrl;
+        $this->flickrService->setBaseUrl($baseUrl);
+        $this->diskService->setBaseUrl($baseUrl);
+    }
+
     /**
      * @return Provider[]
      */
@@ -98,7 +105,7 @@ class ProviderService extends BaseService
         $apiService = $this->getProviderApiService($providerEnum);
         $provider = $this->getProvider($providerEnum);
         $dbData = $this->albumService->getList($provider);
-        $providerData = $apiService?->getAlbums($this->baseUrl);
+        $providerData = $apiService?->getAlbums();
 
         return $this->diffAlbums($providerEnum, $dbData, $providerData);
     }
@@ -114,14 +121,14 @@ class ProviderService extends BaseService
                 continue;
             }
             try {
-                switch ($album->itemChange) {
+                switch ($album->getItemChange()) {
                     case ItemChangeEnum::NEW:
-                        $items = $apiService?->getItems($album, $this->baseUrl);
+                        $items = $apiService?->getItems($album);
                         $this->albumService->create($album);
                         $this->albumService->import($provider, $album, $items);
                         break;
                     case ItemChangeEnum::CHANGE:
-                        $items = $apiService?->getItems($album, $this->baseUrl);
+                        $items = $apiService?->getItems($album);
                         $this->albumService->update($album);
                         $this->albumService->import($provider, $album, $items);
                         break;
@@ -162,26 +169,27 @@ class ProviderService extends BaseService
             return $item === null;
         });
 
+        /** @var Album $album */
         foreach ($forDeletion as $album) {
-            $album->itemChange = ItemChangeEnum::DELETE;
+            $album->setItemChange(ItemChangeEnum::DELETE);
             $data[] = $album;
         }
-
+        /** @var Album $album */
         foreach ($providerData as $key => $album) {
             $dbAlbum = Utilities::findObjectBy($dbData, 'fid', $album->fid);
             if (!$dbAlbum) {
                 $album->id = Utilities::uid();
                 $album->sort = $key;
-                $album->itemChange = ItemChangeEnum::NEW;
+                $album->setItemChange(ItemChangeEnum::NEW);
             }
             elseif ($apiService?->albumIsDifferent($album, $dbAlbum)) {
                 $album->id = $dbAlbum->id;
                 $album->sort = $key;
-                $album->itemChange = ItemChangeEnum::CHANGE;
+                $album->setItemChange(ItemChangeEnum::CHANGE);
             }
             else {
                 $album->id = $dbAlbum->id;
-                $album->itemChange = ItemChangeEnum::OK;
+                $album->setItemChange(ItemChangeEnum::OK);
             }
             $data[] = $album;
         }

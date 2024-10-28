@@ -17,7 +17,7 @@ final class InitialSetup extends AbstractMigration
                 `provider` varchar(10) NOT NULL,
                 `title` varchar(50),
                 `description` text,
-                `cover` varchar(150),
+                `cover` varchar(50),
                 `owner` varchar(50),
                 `public` int(1) DEFAULT 0,
                 `sort` int(5),

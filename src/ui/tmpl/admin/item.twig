@@ -1,11 +1,14 @@
 <div class="media album">
     <div class="media-left">
         <a href="{{ url_for('item', { 'album': album.id, 'photo': item.id }) }}" target="_blank">
-            <img
-                class="media-object"
-                src="{{ item.url }}"
-                title="{{ item.title }}"
-                alt="{{ item.title }}"/>
+            <img class="lazy media-object"
+                 data-original="{{ item.url }}"
+                 width="{{ item.width }}"
+                 height="{{ item.height }}"
+                 alt="{{ item.title }}"
+                 title="{{ item.title }}"
+                 src="https://via.assets.so/img.jpg?w={{ item.width }}&h={{ item.height }}&bg=#111111"
+            />
         </a>
     </div>
     <div class="media-body info">

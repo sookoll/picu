@@ -2,13 +2,16 @@
 
 namespace App\Service\Api;
 
+use App\Enum\ItemSizeEnum;
 use App\Enum\ItemTypeEnum;
 use App\Enum\ProviderEnum;
 use App\Model\Album;
 use App\Model\Photo;
+use App\Model\PhotoSize;
 use App\Model\Provider;
 use App\Service\BaseService;
 use App\Service\ImageService;
+use App\Service\Utilities;
 use DateTime;
 use ImagickException;
 use Psr\Container\ContainerInterface;
@@ -52,7 +55,7 @@ class DiskService extends BaseService implements ApiInterface
         return true;
     }
 
-    public function getAlbums(string $baseUrl): array
+    public function getAlbums(): array
     {
         $albums = [];
         $sets = $this->getListOnDisk($this->conf['import_path']);
@@ -67,7 +70,11 @@ class DiskService extends BaseService implements ApiInterface
             $album->setProvider($this->provider);
             $album->title = $set['name'];
             if (count($images)) {
-                $album->cover = $this->getItemUrl($baseUrl.$set['path'], $images[0]);
+                $album->cover = $images[0];
+                $coverItem = new Photo();
+                $coverItem->fid = $images[0];
+                $coverItem->url = $this->getItemUrl("{$set['path']}/{$images[0]}");
+                $album->setCoverItem($coverItem);
             }
             $album->photos = count($images);
             $album->videos = count($videos);
@@ -78,7 +85,7 @@ class DiskService extends BaseService implements ApiInterface
         return $albums;
     }
 
-    public function getItems(Album $album, string $baseUrl): array
+    public function getItems(Album $album): array
     {
         $itemsList = $this->getItemsByAlbumId($album->fid);
         $items = [];
@@ -89,18 +96,19 @@ class DiskService extends BaseService implements ApiInterface
             }
             $meta = $this->getImageProperties($media['fullPath']);
             $item = new Photo();
+            $item->id = Utilities::uid();
             $item->fid = $media['name'];
             $item->album = $album->id;
             $item->title = $media['name'];
             $item->type = ItemTypeEnum::IMAGE;
             if (isset($meta['exif']['DateTimeOriginal'])) {
                 $datetime = DateTime::createFromFormat('Y:m:d H:i:s', $meta['exif']['DateTimeOriginal']);
-                $item->datetaken = $datetime;
+                $item->datetaken = $datetime->format('Y-m-d H:i:s');
             }
-            $item->url = $media['path'];
+            $item->url = $this->getItemUrl($media['path']);
             $item->width = $meta['size'][0];
             $item->height = $meta['size'][1];
-            $item->metadata = $meta['exif'];
+            $item->sizes = $this->mapSizes($item);
             $item->sort = $i;
             $items[] = $item;
         }
@@ -133,9 +141,9 @@ class DiskService extends BaseService implements ApiInterface
         }
     }
 
-    private function getItemUrl($baseUrl, $item, $size = 'q'): string
+    private function getItemUrl($item): string
     {
-        return "$baseUrl/$item";
+        return "{$this->baseUrl}{$item}";
     }
 
     private function getListOnDisk(string $pathPart): array
@@ -209,5 +217,45 @@ class DiskService extends BaseService implements ApiInterface
         $set = $sets[$i];
 
         return $this->getListOnDisk($set['path']);
+    }
+
+    private function mapSizes(Photo $item): array
+    {
+        $sizes = [];
+        foreach (ItemSizeEnum::cases() as $sizeEnum) {
+            $providerSize = $this->conf['sizes'][$sizeEnum->value];
+            $itemSizes = [$item->width, $item->height];
+            if (!$providerSize || $providerSize > max($itemSizes)) {
+                continue;
+            }
+            $size = $this->getSize($sizeEnum, $item);
+            $sizes[$sizeEnum->value] = $size;
+        }
+
+        return $sizes;
+    }
+
+    private function getSize(ItemSizeEnum $sizeEnum, Photo $item): PhotoSize
+    {
+        $size = new PhotoSize();
+        $ext = pathinfo($item->url, PATHINFO_EXTENSION);
+        $path = $this->conf['cache_path'];
+        $size->url = $this->baseUrl . "$path/{$item->id}_{$sizeEnum->value}.$ext";
+        $providerSize = $this->conf['sizes'][$sizeEnum->value];
+
+        if ($sizeEnum->value === 'sq150') {
+            $size->width = $providerSize;
+            $size->height = $providerSize;
+        }
+        elseif ($item->width >= $item->height) {
+            $size->width = $providerSize;
+            $size->height = round(($providerSize / $item->width) * $item->height);
+        }
+        else {
+            $size->height = $providerSize;
+            $size->width = round(($providerSize / $item->height) * $item->width);
+        }
+
+        return $size;
     }
 }

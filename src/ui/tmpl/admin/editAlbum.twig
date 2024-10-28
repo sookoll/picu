@@ -32,7 +32,7 @@
                         </span>
                             <h2 class="panel-title">Muuda: {{ album.title }}</h2>
                         </div>
-                        <div class="panel-body">
+                        <div class="panel-body thumbs">
                             {% if items | length < 1 %}
                                 Album on tühi
                             {% else %}
@@ -51,5 +51,6 @@
 {% block scripts %}
     <script src="{{ base_url }}/ui/lib/jQuery-File-Upload-9.12.1/js/vendor/jquery.ui.widget.js" type="text/javascript"></script>
     <script src="{{ base_url }}/ui/lib/jQuery-File-Upload-9.12.1/js/jquery.fileupload.js" type="text/javascript"></script>
+    <script src="{{ base_url }}/ui/lib/jquery/jquery.lazyload.min.js" type="text/javascript"></script>
     <script src="{{ base_url }}/ui/js/admin.js" type="text/javascript"></script>
 {% endblock %}

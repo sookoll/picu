@@ -56,8 +56,12 @@ return function (App $app) {
     $app->group('/api', function (Group $group) {
         $group->get('/set[/{album}]', ApiController::class . ':set')
             ->setName('api_set');
+        $group->get('/item/sizes', ApiController::class . ':sizes')
+            ->setName('api_item_sizes');
+        $group->get('/item/{album}[/{item}]', ApiController::class . ':item')
+            ->setName('api_item_sizes');
     });
-    // Gallery
+    // v1 Gallery endpoints
     $app->get('/a/{album}[/{photo}]', GalleryController::class . ':album')->setName('album');
     $app->get('/p/{album}/{photo}', GalleryController::class . ':photo')->setName('item');
     $app->get('/d/{album}/{photo}', GalleryController::class . ':download')->setName('photo_download');

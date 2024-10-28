@@ -1,9 +1,9 @@
 {% extends '@__main__/layout.twig' %}
 
 {% block meta %}
-    <meta property="og:title" content="{{ set.title }}" />
+    <meta property="og:title" content="{{ album.title }}" />
     <meta property="og:url" content="{{ current_url() }}" />
-    <meta property="og:image:width" content="{{ set.thumbnail.width_c }}" />
+    <meta property="og:image:width" content="{{ cover.width_c }}" />
     <meta property="og:image:height" content="{{ set.thumbnail.height_c }}" />
     <meta property="og:image" content="{{ set.thumbnail.url_c }}" />
     <link rel="image_src" href="{{ set.thumbnail.url_c }}" />

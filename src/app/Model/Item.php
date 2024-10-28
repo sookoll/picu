@@ -15,7 +15,15 @@ class Item
     public ItemTypeEnum $type;
     public string $url;
     public int $sort = 0;
-    public DateTime $changed;
-    public DateTime $added;
-    public ?ItemChangeEnum $itemChange;
+    private ?ItemChangeEnum $itemChange;
+
+    public function getItemChange(): ?ItemChangeEnum
+    {
+        return $this->itemChange;
+    }
+
+    public function setItemChange(?ItemChangeEnum $itemChange): void
+    {
+        $this->itemChange = $itemChange;
+    }
 }

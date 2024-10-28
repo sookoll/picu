@@ -2,10 +2,12 @@
 
 namespace App\Service\Api;
 
+use App\Enum\ItemSizeEnum;
 use App\Enum\ItemTypeEnum;
 use App\Enum\ProviderEnum;
 use App\Model\Album;
 use App\Model\Photo;
+use App\Model\PhotoSize;
 use App\Model\Provider;
 use App\Service\BaseService;
 use App\Service\Utilities;
@@ -115,7 +117,7 @@ class FlickrService extends BaseService implements ApiInterface
         return (is_file($this->conf['token_file']) && unlink($this->conf['token_file']));
     }
 
-    public function getAlbums(string $baseUrl): array
+    public function getAlbums(): array
     {
         $albums = [];
         $sets = $this->phpFlickr->photosets()->getList();
@@ -128,7 +130,13 @@ class FlickrService extends BaseService implements ApiInterface
                 $album->owner = $set['owner'];
                 $album->title = is_string($set['title']) ? $set['title'] : $set['title']['_content'];
                 $album->description = is_string($set['description']) ? $set['description'] : $set['description']['_content'];
-                $album->cover = $this->getItemUrl($set);
+                if (isset($set['primary'])) {
+                    $album->cover = $set['primary'];
+                    $coverItem = new Photo();
+                    $coverItem->fid = $set['primary'];
+                    $coverItem->url = $this->getItemUrl($set);
+                    $album->setCoverItem($coverItem);
+                }
                 $album->photos = $set['photos'];
                 $album->videos = $set['videos'];
                 $album->sort = $i;
@@ -139,7 +147,7 @@ class FlickrService extends BaseService implements ApiInterface
         return $albums;
     }
 
-    public function getItems(Album $album, string $baseUrl): array
+    public function getItems(Album $album): array
     {
         $items = [];
         $extras = "date_taken, geo, tags, url_o, url_{$this->conf['vb_size']}, url_z, url_c";
@@ -153,14 +161,11 @@ class FlickrService extends BaseService implements ApiInterface
                 $item->album = $album->id;
                 $item->title = $media['title'];
                 $item->type = ItemTypeEnum::IMAGE;
-                if (isset($media['datetaken'])) {
-                    $datetime = DateTime::createFromFormat('Y-m-d H:i:s', $media['datetaken']);
-                    $item->datetaken = $datetime;
-                }
+                $item->datetaken = $media['datetaken'];
                 $item->url = $media['url_o'];
                 $item->width = $media['width_o'];
                 $item->height = $media['height_o'];
-                $item->metadata = $media;
+                $item->sizes = $this->mapSizes($media);
                 $item->sort = $i;
                 $items[] = $item;
             }
@@ -187,7 +192,7 @@ class FlickrService extends BaseService implements ApiInterface
         return "https://farm{$set['farm']}.staticflickr.com/{$set['server']}/{$set['primary']}_{$set['secret']}_{$size}.jpg";
     }
 
-    private function calculateImageSizes(array &$photo): void
+    private function calculateImageSizes(array $photo): array
     {
         $width_o = (int) $photo['width_o'];
         $height_o = (int) $photo['height_o'];
@@ -215,5 +220,25 @@ class FlickrService extends BaseService implements ApiInterface
         $photo['url_z'] = $photo['url_z'] ?? $photo['url_o'];
         $photo['width_vb'] = $photo['width_'.$this->conf['vb_size']] ?? $width_o;
         $photo['height_vb'] = $photo['height_'.$this->conf['vb_size']] ?? $height_o;
+
+        return $photo;
+    }
+
+    private function mapSizes(mixed $media)
+    {
+        $sizes = [];
+        foreach (ItemSizeEnum::cases() as $sizeEnum) {
+            $providerSize = $this->conf['sizes'][$sizeEnum->value];
+            if (!$providerSize || !isset($media["url_{$providerSize}"])) {
+                continue;
+            }
+            $size =  new PhotoSize();
+            $size->url = $media["url_{$providerSize}"];
+            $size->width = $media["width_{$providerSize}"];
+            $size->height = $media["height_{$providerSize}"];
+            $sizes[$sizeEnum->value] = $size;
+        }
+
+        return $sizes;
     }
 }
