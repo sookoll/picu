@@ -11,7 +11,6 @@ use App\Model\PhotoSize;
 use App\Model\Provider;
 use App\Service\BaseService;
 use App\Service\Utilities;
-use DateTime;
 use JsonException;
 use OAuth\Common\Exception\Exception;
 use OAuth\Common\Storage\Memory;
@@ -38,6 +37,11 @@ class FlickrService extends BaseService implements ApiInterface
     public function setProvider(Provider $provider): void
     {
         $this->provider = $provider;
+    }
+
+    public function getImportMaxSize(): ?int
+    {
+        return $this->conf['import_max_count'];
     }
 
     public function init(): bool
@@ -188,11 +192,6 @@ class FlickrService extends BaseService implements ApiInterface
             $album->videos !== $compareAlbum->videos;
     }
 
-    public function autorotate(string $albumId): void
-    {
-    }
-
-
     public function readFile(Album $album, Photo $item, ItemSizeEnum $sizeEnum = null): array
     {
         $url = ($sizeEnum && isset($item->sizes[$sizeEnum->value]))
@@ -204,16 +203,26 @@ class FlickrService extends BaseService implements ApiInterface
         return $file;
     }
 
+    public function clearCache(Album $album): void
+    {
+    }
+
     private function fetchItems(Album $album)
     {
         $sizesList = array_map(static fn($size) => "url_$size", array_values($this->conf['sizes']));
         $extras = 'date_taken, geo, tags, url_o, ' . implode(', ', $sizesList);
-        $photos = $this->phpFlickr->photosets()->getPhotos($album->fid, $album->owner, $extras);
-        if ($photos && isset($photos['photo'])) {
-            return $photos['photo'];
+        $total = $album->videos + $album->photos;
+        $perPage = 500;
+        $pages = ceil($total / $perPage);
+        $results = [];
+        for ($i = 1; $i <= $pages; $i++) {
+            $photos = $this->phpFlickr->photosets()->getPhotos($album->fid, $album->owner, $extras, $perPage, $i);
+            if ($photos && isset($photos['photo'])) {
+                $results[] = $photos['photo'];
+            }
         }
 
-        return [];
+        return array_merge([], ...$results);
     }
 
     private function getItemUrl($set, $size = 'q'): string

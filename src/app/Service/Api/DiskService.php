@@ -35,6 +35,11 @@ class DiskService extends BaseService implements ApiInterface
         $this->provider = $provider;
     }
 
+    public function getImportMaxSize(): ?int
+    {
+        return $this->conf['import_max_count'];
+    }
+
     public function init(): bool
     {
         // check directories
@@ -142,25 +147,6 @@ class DiskService extends BaseService implements ApiInterface
             $album->videos !== $compareAlbum->videos;
     }
 
-    public function autorotate(string $albumId): void
-    {
-        $items = $this->getItemsByAlbumId($albumId);
-        foreach ($items as $item) {
-            if (!$this->isImage($item['name'])) {
-                continue;
-            }
-            try {
-                $img = ImageService::create($item['fullPath']);
-                ImageService::autorotate($img);
-                unlink($item['fullPath']);
-                $img->writeImage($item['fullPath']);
-                $img->clear();
-            } catch (ImagickException $e) {
-                $this->logger->error('Autorotate image failed: ' . $e->getMessage());
-            }
-        }
-    }
-
     public function readFile(Album $album, Photo $item, ItemSizeEnum $sizeEnum = null): array
     {
         $path = "{$this->settings['rootPath']}{$this->conf['import_path']}/{$album->fid}/{$item->fid}";
@@ -175,7 +161,12 @@ class DiskService extends BaseService implements ApiInterface
             else {
                 $img->thumbnailImage($size->width, $size->height);
             }
+            ImageService::autorotate($img);
             $path = $this->settings['rootPath'] . $this->cacheFileName($sizeEnum, $item, $source['extension']);
+            $albumPath = dirname($path);
+            if (!file_exists($albumPath) && !mkdir($albumPath, 0777, true) && !is_dir($albumPath)) {
+                throw new RuntimeException(sprintf('Directory "%s" was not created', $albumPath));
+            }
             file_put_contents($path, $img);
             $img->clear();
         }
@@ -183,6 +174,13 @@ class DiskService extends BaseService implements ApiInterface
         $source['resource'] = fopen($path, 'rb');
 
         return $source;
+    }
+
+    public function clearCache(Album $album): void
+    {
+        $path = $this->settings['rootPath'] . "{$this->conf['cache_path']}/{$album->id}";
+
+        Utilities::rmdir($path);
     }
 
     private function getItemUrl($item): string
@@ -201,14 +199,10 @@ class DiskService extends BaseService implements ApiInterface
 
         // read content into array
         $list = scandir($path);
-        if (count($list) <= 2) { /* The 2 accounts for . and .. */
-            $this->logger->info('Read list empty from: ' . $path);
-            return $data;
-        }
         // loop
         foreach ($list as $item) {
             $subpath = "$path/$item";
-            if ($item === '.' || $item === '..' || !file_exists($subpath)) {
+            if ($item === '.DS_Store' || $item === '.' || $item === '..' || !file_exists($subpath)) {
                 continue;
             }
 
@@ -226,6 +220,7 @@ class DiskService extends BaseService implements ApiInterface
     {
         $img = ImageService::create($path);
         $exifArray = $img->getImageProperties("exif:*");
+        ImageService::autorotate($img);
         $size = [
             $img->getImageWidth(),
             $img->getImageHeight()
@@ -308,6 +303,6 @@ class DiskService extends BaseService implements ApiInterface
     {
         $path = $this->conf['cache_path'];
 
-        return "$path/{$item->id}_{$sizeEnum->value}." . strtolower($ext);
+        return "$path/{$item->album}/{$item->id}_{$sizeEnum->value}." . strtolower($ext);
     }
 }

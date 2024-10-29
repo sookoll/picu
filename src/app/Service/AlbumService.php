@@ -5,10 +5,8 @@ namespace App\Service;
 use App\Enum\ItemTypeEnum;
 use App\Enum\ProviderEnum;
 use App\Model\Album;
-use App\Model\Photo;
 use App\Model\Provider;
 use Exception;
-use JsonException;
 use PDO;
 use PDOException;
 use Psr\Container\ContainerInterface;
@@ -145,9 +143,7 @@ class AlbumService extends BaseService
 
     public function create(Album $album): void
     {
-        if (!isset($album->id)) {
-            $album->id = Utilities::uid();
-        }
+        $album->id = $this->ensureUniqueId('picu_album', $album->id ?? null);
         $sql = "
             INSERT INTO picu_album (id, fid, provider, title, description, cover, owner, public, sort)
             VALUES (:id, :fid, :provider, :title, :description, :cover, :owner, :public, :sort)

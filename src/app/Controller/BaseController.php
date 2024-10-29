@@ -7,10 +7,12 @@ use PDO;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
+use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Psr7\Stream;
+use Slim\Routing\RouteContext;
 use Slim\Views\Twig;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -33,6 +35,30 @@ abstract class BaseController
         $this->logger = $container->get('logger');
         $this->settings = $container->get('settings');
         $this->db = $container->get('db');
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @param string $route
+     * @param array $args
+     * @param array $queryParams
+     * @return MessageInterface|Response
+     */
+    protected function redirect(
+        Request $request,
+        Response $response,
+        string $route,
+        array $args = [],
+        array $queryParams = []
+    ): MessageInterface|Response
+    {
+        $routeParser = RouteContext::fromRequest($request)->getRouteParser();
+        $url = $routeParser->urlFor($route, $args, $queryParams);
+
+        return $response
+            ->withHeader('Location', $url)
+            ->withStatus(302);
     }
 
     /**
@@ -66,8 +92,6 @@ abstract class BaseController
 
     protected function file(Request $request, Response $response, array $source, bool $download = false): Response
     {
-
-
         $filename = $source['basename'];
         $ext = strtolower($source['extension']);
         $ctype = match ($ext) {

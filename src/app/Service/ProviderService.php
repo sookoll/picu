@@ -2,9 +2,10 @@
 
 namespace App\Service;
 
-use App\Enum\ItemChangeEnum;
+use App\Enum\ItemStatusEnum;
 use App\Enum\ProviderEnum;
 use App\Model\Album;
+use App\Model\ItemStatus;
 use App\Model\Provider;
 use App\Service\Api\FlickrService;
 use App\Service\Api\DiskService;
@@ -108,41 +109,54 @@ class ProviderService extends BaseService
         $this->providers = $providers;
     }
 
-    public function diff(ProviderEnum $providerEnum): array
+    public function diff(ProviderEnum $providerEnum, string $albumFid = null): array
     {
         $apiService = $this->getProviderApiService($providerEnum);
         $provider = $this->getProvider($providerEnum);
-        $dbData = $this->albumService->getList($provider);
+        $dbData = $this->albumService->getList($provider, null, $albumFid);
         $providerData = $apiService?->getAlbums();
+
+        if ($albumFid) {
+            $providerData = array_filter($providerData, static fn($album) => $album->fid === $albumFid);
+        }
 
         return $this->diffAlbums($providerEnum, $dbData, $providerData);
     }
 
-    public function sync(ProviderEnum $providerEnum, string $albumId = null): bool
+    public function sync(ProviderEnum $providerEnum, string $albumFid): bool
     {
         $apiService = $this->getProviderApiService($providerEnum);
         $provider = $this->getProvider($providerEnum);
+        $max = $apiService?->getImportMaxSize() ?: 1000;
 
         /** @var Album $album */
-        foreach ($this->diff($providerEnum) as $album) {
-            if ($albumId && $albumId !== $album->fid) {
+        $i = 0;
+        foreach ($this->diff($providerEnum, $albumFid) as $album) {
+            if ($albumFid && $albumFid !== $album->fid) {
                 continue;
             }
+            if ($i >= $max) {
+                break;
+            }
             try {
-                switch ($album->getItemChange()) {
-                    case ItemChangeEnum::NEW:
+                switch ($album->getStatus()?->type) {
+                    case ItemStatusEnum::NEW:
                         $items = $apiService?->getItems($album);
                         $this->albumService->create($album);
                         $this->albumService->import($provider, $album, $items);
+                        $i++;
                         break;
-                    case ItemChangeEnum::CHANGE:
+                    case ItemStatusEnum::CHANGE:
                         $items = $apiService?->getItems($album);
                         $this->albumService->update($album);
                         $this->albumService->import($provider, $album, $items);
+                        $i++;
                         break;
-                    case ItemChangeEnum::DELETE:
+                    case ItemStatusEnum::DELETE:
+                        $apiService?->clearCache($album);
                         $this->itemService->deleteAll($album);
                         $this->albumService->delete($album);
+                        $i++;
                         break;
                 }
             } catch (\Exception $e) {
@@ -179,29 +193,35 @@ class ProviderService extends BaseService
 
         /** @var Album $album */
         foreach ($forDeletion as $album) {
-            $album->setItemChange(ItemChangeEnum::DELETE);
+            $album->setStatus(new ItemStatus(ItemStatusEnum::DELETE));
             $data[] = $album;
         }
         /** @var Album $album */
         foreach ($providerData as $key => $album) {
+            /** @var Album $dbAlbum */
             $dbAlbum = Utilities::findObjectBy($dbData, 'fid', $album->fid);
+            $itemStatus = null;
             if (!$dbAlbum) {
                 $album->id = Utilities::uid();
                 $album->sort = $key;
-                $album->setItemChange(ItemChangeEnum::NEW);
+                $itemStatus = new ItemStatus(ItemStatusEnum::NEW);
             } else {
                 $dbAlbumItemsList = $this->itemService->getFidList($dbAlbum);
                 $albumItemsList = $apiService?->getItemsFidList($album);
                 if ($apiService?->albumIsDifferent($album, $dbAlbum) || count(array_diff($dbAlbumItemsList, $albumItemsList)) > 0) {
                     $album->id = $dbAlbum->id;
                     $album->sort = $key;
-                    $album->setItemChange(ItemChangeEnum::CHANGE);
+                    $itemStatus = new ItemStatus(ItemStatusEnum::CHANGE, [
+                        'photos' => $dbAlbum->photos,
+                        'videos' => $dbAlbum->videos
+                    ]);
                 }
                 else {
                     $album->id = $dbAlbum->id;
-                    $album->setItemChange(ItemChangeEnum::OK);
+                    $itemStatus = new ItemStatus(ItemStatusEnum::OK);
                 }
             }
+            $album->setStatus($itemStatus);
             $data[] = $album;
         }
 

@@ -5,11 +5,17 @@ use App\Controller\AdminController;
 use App\Controller\ApiController;
 use App\Controller\AuthController;
 use App\Controller\GalleryController;
+use App\Controller\LegacyGalleryController;
 use App\Controller\HomeController;
 use App\Controller\ImageController;
 use App\Middleware\AuthenticationMiddleware;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\App;
 use Slim\Interfaces\RouteCollectorProxyInterface as Group;
+use Slim\Routing\RouteContext;
 
 return function (App $app) {
     $container = $app->getContainer();
@@ -34,11 +40,8 @@ return function (App $app) {
         $group->get('/{provider}/import', AdminController::class . ':validate')
             ->setName('import_validate')
             ->add(AuthenticationMiddleware::class);
-        $group->get('/{provider}/sync[/{album}]', AdminController::class . ':import')
+        $group->get('/{provider}/sync/{album}', AdminController::class . ':import')
             ->setName('import_sync')
-            ->add(AuthenticationMiddleware::class);
-        $group->get('/{provider}/autorotate[/{album}]', AdminController::class . ':autorotate')
-            ->setName('provider_autorotate')
             ->add(AuthenticationMiddleware::class);
         $group->post('/{provider}/upload[/{album}]', AdminController::class . ':upload')
             ->setName('provider_upload')
@@ -63,10 +66,15 @@ return function (App $app) {
             ->setName('api_item_sizes');
     });
     // Image
-    $app->get('/media/cache/{item}_{size}.{ext}', ImageController::class . ':image')->setName('api_image');
+    $app->get('/media/cache/{album}/{item}_{size}.{ext}', ImageController::class . ':image')->setName('api_image');
 
-    // v1 Gallery endpoints
-    $app->get('/a/{album}[/{photo}]', GalleryController::class . ':album')->setName('album');
-    $app->get('/p/{album}/{photo}', GalleryController::class . ':photo')->setName('item');
-    $app->get('/d/{album}/{photo}', GalleryController::class . ':download')->setName('photo_download');
+    // Deprecated: Legacy gallery endpoints
+    $app->get('/a/{album}[/{photo}]', LegacyGalleryController::class . ':album');
+    $app->get('/p/{album}/{photo}', LegacyGalleryController::class . ':photo');
+    $app->get('/d/{album}/{photo}', LegacyGalleryController::class . ':download');
+
+    // Gallery endpoints
+    $app->get('/{album}[/{item}]', GalleryController::class . ':album')->setName('album');
+    $app->get('/{album}_{item}', GalleryController::class . ':photo')->setName('item');
+    $app->get('/{album}_{item}?download', GalleryController::class . ':download')->setName('download');
 };

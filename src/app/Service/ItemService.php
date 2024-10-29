@@ -140,9 +140,7 @@ class ItemService extends BaseService
 
     public function create(Photo $item): void
     {
-        if (!isset($item->id)) {
-            $item->id = Utilities::uid();
-        }
+        $item->id = $this->ensureUniqueId('picu_album', $item->id ?? null);
         $sql = "
             INSERT INTO picu_item (id, fid, album, title, description, type, datetaken, url, width, height, metadata, sort)
             VALUES (:id, :fid, :album, :title, :description, :type, :datetaken, :url, :width, :height, :metadata, :sort)

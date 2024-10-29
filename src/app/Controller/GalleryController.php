@@ -24,20 +24,23 @@ class GalleryController extends BaseController
 
     public function album(Request $request, Response $response, array $args = []): Response
     {
-        $albumFid = $args['album'] ?? null;
-        if ($albumFid) {
-            $this->albumService->setBaseUrl($request->getAttribute('base_url'));
-            $this->itemService->setBaseUrl($request->getAttribute('base_url'));
-            $album = $this->albumService->getByFid($albumFid, true);
-            if ($album) {
-                $items = $this->itemService->getList($album);
+        $albumId = $args['album'] ?? null;
+        $itemId = $args['item'] ?? null;
+        if (!$albumId) {
+            throw new HttpNotFoundException($request);
+        }
+        $this->albumService->setBaseUrl($request->getAttribute('base_url'));
+        $this->itemService->setBaseUrl($request->getAttribute('base_url'));
+        $album = $this->albumService->get($albumId);
+        if ($album) {
+            $items = $this->itemService->getList($album);
 
-                return $this->render($request, $response, 'album.twig', [
-                    'page' => 'set',
-                    'album' => $album,
-                    'items' => $items
-                ]);
-            }
+            return $this->render($request, $response, 'album.twig', [
+                'page' => 'set',
+                'album' => $album,
+                'itemId' => $itemId,
+                'items' => $items
+            ]);
         }
 
         return $response->withStatus(404);

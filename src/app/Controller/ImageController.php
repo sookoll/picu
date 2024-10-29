@@ -33,17 +33,11 @@ class ImageController extends BaseController
         $this->albumService->setBaseUrl($request->getAttribute('base_url'));
         $itemId = $args['item'] ?? null;
         $sizeId = $args['size'] ?? null;
-        $apiToken = $this->settings['api_token'];
-        $queryParams = $request->getQueryParams();
-        $token = $queryParams['token'] ?? null;
-
-        $onlyPublic = !$token || $token !== $apiToken;
-
         $item = $this->itemService->get($itemId);
         $file = null;
 
         if ($item) {
-            $set = $this->albumService->getList(null, $item->album, null, $onlyPublic);
+            $set = $this->albumService->getList(null, $item->album);
             if (count($set) === 1) {
                 $providerEnum = ProviderEnum::from($set[0]->getProvider()->getId());
                 $providerApi = match ($providerEnum) {

@@ -2,9 +2,7 @@
 
 namespace App\Model;
 
-use App\Enum\ItemChangeEnum;
 use App\Enum\ItemTypeEnum;
-use DateTime;
 
 class Item
 {
@@ -15,15 +13,15 @@ class Item
     public ItemTypeEnum $type;
     public string $url;
     public int $sort = 0;
-    private ?ItemChangeEnum $itemChange = null;
+    private ?ItemStatus $status = null;
 
-    public function getItemChange(): ?ItemChangeEnum
+    public function getStatus(): ?ItemStatus
     {
-        return $this->itemChange;
+        return $this->status;
     }
 
-    public function setItemChange(?ItemChangeEnum $itemChange): void
+    public function setStatus(?ItemStatus $status): void
     {
-        $this->itemChange = $itemChange;
+        $this->status = $status;
     }
 }

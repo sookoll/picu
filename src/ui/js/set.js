@@ -3,8 +3,7 @@
  * swipe: http://www.awwwards.com/touchswipe-a-jquery-plugin-for-touch-and-gesture-based-interaction.html
  */
 var ViewBox = function(){
-    var matches = window.location.href.match(/[^\/].*[^\/]\/a/g)
-    this.path = matches[0];
+    this.path = basePath;
     this.gallery = [];
     this.is_open = false;
     this.current = null;
@@ -33,13 +32,13 @@ ViewBox.prototype = {
     },
 
     open : function(href){
-
         href = this.formatHref(href);
         href_ = href.split('/');
 
         // already open
-        if(this.current === href)
+        if (this.current === href) {
             return;
+        }
 
         this.dom_modal.html('');
         this.dom_overlay
@@ -47,18 +46,20 @@ ViewBox.prototype = {
             .removeClass('disabled');
 
         // find next and prev
-        if($.inArray(href,this.gallery) + 1 > this.gallery.length-1){
+        if ($.inArray(href,this.gallery) + 1 > this.gallery.length-1) {
             this.next = href;
             this.dom_overlay.find('a.next').addClass('disabled');
         }
-        else
-            this.next = this.gallery[($.inArray(href,this.gallery) + 1)];
-        if($.inArray(href,this.gallery) - 1 < 0){
+        else {
+            this.next = this.gallery[($.inArray(href, this.gallery) + 1)];
+        }
+        if ($.inArray(href,this.gallery) - 1 < 0) {
             this.prev = href;
             this.dom_overlay.find('a.prev').addClass('disabled');
         }
-        else
-            this.prev = this.gallery[($.inArray(href,this.gallery) - 1)];
+        else {
+            this.prev = this.gallery[($.inArray(href, this.gallery) - 1)];
+        }
 
         this.th = $('a.viewbox[data-id='+href_[1]+'] img');
 
@@ -110,9 +111,8 @@ ViewBox.prototype = {
     },
 
     formatHref : function(href) {
-        var matches = href.match(/a\/[^\/].*[^\/]/g);
-        href = matches ? matches[0] : '';
-        return href.replace(/^(a\/)/, '');
+        href = href.replace(this.path, '');
+        return href.replace('/', '');
     },
 
     resize : function(){

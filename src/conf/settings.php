@@ -75,6 +75,7 @@ return static function (ContainerBuilder $containerBuilder) {
                 ],
                 'th_size' => 300,
                 'vb_size' => 'k',
+                'import_max_count' => (int)$_ENV['FLICKR_IMPORT_MAX'],
             ],
             // Local disk provider
             'disk' => [
@@ -95,6 +96,7 @@ return static function (ContainerBuilder $containerBuilder) {
                 ],
                 'th_size' => 300,
                 'vb_size' => 'l2048',
+                'import_max_count' => (int)$_ENV['DISK_IMPORT_MAX'],
             ]
         ],
         // upload

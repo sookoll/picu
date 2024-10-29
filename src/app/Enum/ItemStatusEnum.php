@@ -2,7 +2,7 @@
 
 namespace App\Enum;
 
-enum ItemChangeEnum: string
+enum ItemStatusEnum: string
 {
     use EnumTrait;
 

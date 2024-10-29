@@ -2,6 +2,7 @@
 namespace App\Controller;
 
 use App\Enum\ProviderEnum;
+use App\Model\Album;
 use App\Service\ProviderService;
 use App\Service\Utilities;
 use Psr\Container\ContainerInterface;
@@ -19,6 +20,7 @@ final class AdminController extends BaseController
     )
     {
         parent::__construct($container);
+        set_time_limit(60);
         Utilities::ensureDirectoriesExists($this->settings);
         $this->service->initProviders();
     }
@@ -111,36 +113,30 @@ final class AdminController extends BaseController
         $this->service->setBaseUrl($request->getAttribute('base_url'));
         $providerEnum = ProviderEnum::from($args['provider']);
         $provider = $this->service->getProvider($providerEnum);
-        $album = $args['album'] ?? null;
+        $albumFid = $args['album'] ?? null;
         if (
             $provider->isEnabled() &&
-            $provider->isAuthenticated()
+            $provider->isAuthenticated() &&
+            $albumFid
         ) {
-            if ($this->service->sync($providerEnum, $album)) {
-                return Utilities::redirect('import_validate', $request, $response, ['provider' => $provider->getId()]);
+            if ($this->service->sync($providerEnum, $albumFid)) {
+                $result = [];
+                /** @var Album $album */
+                foreach($this->service->diff($providerEnum, $albumFid) as $album) {
+                    $result[] = [
+                        'id' => $album->id,
+                        'fid' => $album->fid,
+                        'photos' => $album->photos,
+                        'videos' => $album->videos,
+                        'status' => $album->getStatus()
+                    ];
+                }
+
+                return $this->json($response, $result);
             }
         }
 
-        return $response->withStatus(400);
-    }
-
-    public function autorotate(Request $request, Response $response, array $args = []): Response
-    {
-        $this->service->setBaseUrl($request->getAttribute('base_url'));
-        $providerEnum = ProviderEnum::from($args['provider']);
-        $provider = $this->service->getProvider($providerEnum);
-        $album = $args['album'] ?? null;
-        if (
-            $album &&
-            $provider->isEnabled() &&
-            $provider->isAuthenticated()
-        ) {
-            if ($this->service->autorotate($providerEnum, $album)) {
-                return Utilities::redirect('import_validate', $request, $response, ['provider' => $provider->getId()]);
-            }
-        }
-
-        return $response->withStatus(400);
+        return $response->withStatus(404);
     }
 
     public function upload(Request $request, Response $response, array $args = []): Response
@@ -228,6 +224,7 @@ final class AdminController extends BaseController
         ) {
             $album = $this->service->getAlbumService()->get($albumId);
             if ($album) {
+                $this->service->getProviderApiService($providerEnum)?->clearCache($album);
                 $this->service->getItemService()->deleteAll($album);
                 $this->service->getAlbumService()->delete($album);
 

@@ -34,6 +34,25 @@ class Utilities
         }
     }
 
+    public static function rmdir($dir) {
+        if (!file_exists($dir)) {
+            return true;
+        }
+        if (!is_dir($dir)) {
+            return unlink($dir);
+        }
+        foreach (scandir($dir) as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+            if (!self::rmdir($dir . DIRECTORY_SEPARATOR . $item)) {
+                return false;
+            }
+        }
+
+        return rmdir($dir);
+    }
+
     public static function serializeStatementCondition(array $conditions, $operator = 'AND'): string
     {
         $conditionsString = array_map(function($key) use ($conditions) {
@@ -96,9 +115,10 @@ class Utilities
         $hash_base64 = base64_encode(hash('sha256', $input, true));
         // Replace non-urlsafe chars to make the string urlsafe.
         $hash = strtr($hash_base64, '+/_', '---');
+        $hash = str_replace('-', '', $hash);
         // Trim base64 padding characters from the end.
         $hash = rtrim($hash, '=');
-        $hash = rtrim($hash, '0123456789-');
+        $hash = ltrim($hash, '0123456789');
 
         // Shorten the string before returning.
         return substr( $hash, 0, $length );
