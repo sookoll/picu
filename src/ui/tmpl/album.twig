@@ -24,14 +24,14 @@
     <section>
         <div class="thumbs">
             {% for photo in items %}
-                <a data-id="{{ photo.id }}" class="viewbox" href="{{ url_for('album', { 'album': album.id, 'item': photo.id }) }}">
+                <a data-id="{{ photo.id }}" class="viewbox" href="{{ full_url_for('album', { 'album': album.id, 'item': photo.id }) }}">
                     <img class="lazy"
                          data-original="{{ photo.sizes.m800.url }}"
                          data-vb-src="{{ photo.sizes.l2048.url }}"
                          data-vb-w="{{ photo.sizes.l2048.width }}"
                          data-vb-h="{{ photo.sizes.l2048.height }}"
-                         data-img-link="{{ url_for('item', { 'album': album.id, 'item': photo.id }) }}"
-                         data-img-download="{{ url_for('download', { 'album': album.id, 'item': photo.id }) }}"
+                         data-img-link="{{ full_url_for('item', { 'album': album.id, 'item': photo.id }) }}"
+                         data-img-download="{{ full_url_for('download', { 'album': album.id, 'item': photo.id }) }}"
                          width="{{ photo.sizes.s320.width }}"
                          height="{{ photo.sizes.s320.height }}"
                          alt="{{ photo.title ?: photo.id }}"

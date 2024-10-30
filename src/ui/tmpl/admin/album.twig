@@ -46,7 +46,7 @@
                     <div class="caption" contenteditable="true" tabindex="{{ loop.index + 1 }}">
                         {{ photo.title }}
                     </div>
-                    <i class="glyphicon glyphicon-star{{ photo.id == album.coverItem.id ? '' : '-empty' }}"></i>
+                    <i class="glyphicon glyphicon-star {{ photo.id == album.coverItem.id ? 'active' : '' }}"></i>
                 </a>
             {% endfor %}
         </div>
