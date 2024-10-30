@@ -3,9 +3,19 @@ picu
 
 Small flickr based private photos gallery
 
-## Installation
+## Setup
 
-1. Check out git-repo
-2. Place src content to web folder
-3. Create cache folder into it and give web server write permissions to that
-4. Rename config.php.base to config.php and edit its content.
+1. Copy .env.example to .env
+2. Edit .env
+3. Edit .htaccess - RewriteBase if not in root
+4. `composer install`
+5. `php vendor/bin/phoenix migrate --config=conf/phoenix.php`
+
+To create new migration:
+```
+php vendor/bin/phoenix create --config=conf/phoenix.php "Migrations\InitialSetup"
+```
+To rollback last migration:
+```
+php vendor/bin/phoenix rollback --config=conf/phoenix.php
+```

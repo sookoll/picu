@@ -2,5 +2,8 @@ src/.env
 src/config.php
 src/var
 src/vendor
+src/media
 .idea
 .DS_Store
+docker/dbdata
+

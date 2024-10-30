@@ -47,6 +47,7 @@ if ($config['environment'] !== 'development') {
     $app->getRouteCollector()->setCacheFile($config['route_cache']);
 }
 
+$app->addBodyParsingMiddleware();
 // Add the routing middleware.
 $app->addRoutingMiddleware();
 

@@ -1,0 +1,94 @@
+<div class="media album" id="{{ album.id }}" data-fid="{{ album.fid }}">
+    <div class="media-left">
+        <a href="{{ url_for('album', { 'album': album.id }) }}" target="_blank">
+            <img
+                class="media-object"
+                src="{{ album.coverItem.sizes.sq150.url ?: album.coverItem.url }}"
+                title="{{ album.title }}"
+                alt="{{ album.title }}"/>
+        </a>
+
+    </div>
+    <div class="media-body info">
+        <h4 class="media-heading">
+            <div class="pull-right spinner hidden">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <span class="pull-right status">
+                {% if album.status %}
+                    {% if album.status.type.name == 'DELETE' %}
+                    <span class="label label-danger">{{ album.status.type.name }}</span>
+                    {% elseif album.status.type.name == 'CHANGE' %}
+                    <span class="label label-warning">{{ album.status.type.name }}</span>
+                    {% elseif album.status.type.name == 'NEW' %}
+                    <span class="label label-primary">{{ album.status.type.name }}</span>
+                    {% elseif album.status.type.name == 'OK' %}
+                    <span class="label label-success">{{ album.status.type.name }}</span>
+                    {% endif %}
+                {% else %}
+                    {% if album.public %}
+                        <span class="label label-success">AVALIK</span>
+                    {% else %}
+                        <span class="label label-danger">PRIVAATNE</span>
+                    {% endif %}
+                {% endif %}
+            </span>
+            <a href="{{ url_for('album', { 'album': album.id }) }}" target="_blank">{{ album.title }}</a>
+        </h4>
+        <div  class="text-muted small">{{ album.description }}</div>
+        <div  class="text-muted small">
+            <a href="{{ url_for('api_item', { 'album': album.id }, { 'token': token }) }}" target="_blank">{{ album.id }}</a>
+             | {{ album.fid }}
+        </div>
+        <div class="items-count {{ album.status and album.status.type.name == 'OK' ? 'text-success' : '' }}">
+            <span>
+                <i class="glyphicon glyphicon-camera"></i>
+                <span class="photos-count">{{ album.photos }}</span>
+            </span>
+            <span>
+                <i class="glyphicon glyphicon-film"></i>
+                <span class="videos-count">{{ album.videos }}</span>
+            </span>
+        </div>
+        <div class="text-danger status-items-count">
+        {% if album.status and album.status.type.name == 'CHANGE' and album.status.data %}
+            <span>
+                <i class="glyphicon glyphicon-camera"></i>
+                <span class="photos-count">{{ album.status.data.photos }}</span>
+            </span>
+            <span>
+                <i class="glyphicon glyphicon-film"></i>
+                <span class="videos-count">{{ album.status.data.videos }}</span>
+            </span>
+        {% endif %}
+        </div>
+        <div class="album-tools">
+            {% if not album.status and album.id %}
+                <a href="{{ full_url_for('root') }}upload/{{ album.id }}" class="fileupload fileinput-button btn btn-sm btn-link disabled" title="Lae pilte juurde">
+                    <i class="glyphicon glyphicon-open"></i> Upload
+                    <input type="file" name="files[]" accept="image/*" multiple />
+                </a>
+                <a href="{{ url_for('album_delete', { 'provider': provider.id, 'album': album.id }) }}" class="btn btn-sm btn-link album-delete" title="Eemalda album">
+                    <i class="glyphicon glyphicon-remove"></i> Eemalda album
+                </a>
+                {% if provider.editable %}
+                    <a href="{{ url_for('provider_album', { 'provider': provider.id, 'album': album.id }) }}" class="btn btn-sm btn-link" title="Muuda">
+                        Muuda
+                    </a>
+                {% endif %}
+                <a href="{{ url_for('provider_album', { 'provider': provider.id, 'album': album.id }) }}" class="album-set-public btn btn-sm btn-link" data-public="{{ album.public ? 1 : 0 }}">
+                    {{ album.public ? 'Määra privaatseks' : 'Määra avalikuks' }}
+                </a>
+            {% else %}
+                {% if album.status and album.status.type.name != 'OK' %}
+                <a href="{{ url_for('import_sync', { 'provider': provider.id, 'album': album.fid }) }}" class="album-import btn btn-sm btn-link" title="Impordi see album">
+                    <i class="glyphicon glyphicon-save"></i> Impordi see album
+                </a>
+                {% endif %}
+            {% endif %}
+        </div>
+        <div class="bar"></div>
+    </div>
+</div>

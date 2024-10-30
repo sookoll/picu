@@ -1,12 +1,12 @@
 {% extends '@__main__/layout.twig' %}
 
 {% block meta %}
-    <meta property="og:title" content="{{ photo.title }}" />
+    <meta property="og:title" content="{{ item.title }}" />
     <meta property="og:url" content="{{ current_url() }}" />
-    <meta property="og:image:width" content="{{ set.thumbnail.width_c }}" />
-    <meta property="og:image:height" content="{{ set.thumbnail.height_c }}" />
-    <meta property="og:image" content="{{ set.thumbnail.url_c }}" />
-    <link rel="image_src" href="{{ set.thumbnail.url_c }}" />
+    <meta property="og:image:width" content="{{ item.sizes.m800.width ?: item.width }}" />
+    <meta property="og:image:height" content="{{ item.sizes.m800.height ?: item.height }}" />
+    <meta property="og:image" content="{{ item.sizes.m800.url ?: item.url }}" />
+    <link rel="image_src" href="{{ item.sizes.m800.url ?: item.url }}" />
 {% endblock %}
 
 {% block styles %}
@@ -19,19 +19,19 @@
     <div id="viewbox">
         <div class="img-container">
             <div>
-                <img src="{{ photo.url_z }}" class="" />
-                <img src="{{ photo.url_vb }}" class="" />
+                <img src="{{ item.sizes.m800.url ?: item.url }}" class="" />
+                <img src="{{ item.sizes.l2048.url ?: item.url }}" class="" />
             </div>
         </div>
         <div class="tools row">
             <div class="col-xs-6 title">
                 <a href="#">
                     <i class="glyphicon glyphicon-picture"></i>
-                    <span>{{ photo.title }}</span>
+                    <span>{{ item.title }}</span>
                 </a>
             </div>
             <div class="col-xs-6 text-right">
-                <a href="{{ url_for('photo_download', { 'album': set.id, 'photo': photo.id }) }}" class="download" title="Lae alla">
+                <a href="{{ url_for('download', { 'album': item.album, 'item': item.id }) }}" class="download" title="Lae alla">
                     <i class="glyphicon glyphicon-save"></i>
                 </a>
             </div>
@@ -39,11 +39,11 @@
     </div>
     <!-- th -->
     <img class="thumbnail hidden"
-         data-original="{{ photo.url_z }}"
-         style="width:{{ photo.th_w }}px;height:{{ photo.th_h }}px;margin-left:{{ photo.th_ml }}px;margin-top:{{ photo.th_mt }}px"
-         data-vb-src="{{ photo.url_vb }}"
-         data-vb-w="{{ photo.width_vb }}"
-         data-vb-h="{{ photo.height_vb }}" />
+         data-original="{{ item.sizes.l2048.url ?: item.url }}"
+         style="width:{{ item.sizes.m800.width ?: item.width }}px;height:{{ item.sizes.m800.width ?: item.width }}px;"
+         data-vb-src="{{ item.sizes.l2048.url ?: item.url }}"
+         data-vb-w="{{ item.sizes.l2048.width ?: item.width }}"
+         data-vb-h="{{ item.sizes.l2048.height ?: item.height }}" />
 {% endblock %}
 
 {% block scripts %}

@@ -15,16 +15,22 @@
 
 
 {% block contents %}
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container-fluid">
+            <a href="{{ url_for('admin') }}" class="btn btn-link navbar-btn navbar-left" title="Tagasi">
+                <i class="glyphicon glyphicon-arrow-left"></i> Tagasi
+            </a>
+
+        </div>
+    </nav>
     <header style="background-image:linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),url({{ album.coverItem.sizes.m800.url ?: album.coverItem.url }})">
-        <h1 class="text-center">{{ album.title }}</h1>
-        {% if album.description is defined %}
-            <h5 class="text-center">{{ album.description }}</h5>
-        {% endif %}
+        <h1 class="text-center"><span contenteditable="true">{{ album.title }}</span></h1>
+        <textarea>{{ album.description }}</textarea>
     </header>
     <section>
         <div class="thumbs">
             {% for photo in items %}
-                <a data-id="{{ photo.id }}" class="viewbox" href="{{ url_for('album', { 'album': album.id, 'item': photo.id }) }}">
+                <a data-id="{{ photo.id }}" data-fid="{{ photo.fid }}" class="viewbox" href="{{ url_for('provider_item', { 'provider': provider.id, 'album': album.id, 'item': photo.id }) }}">
                     <img class="lazy"
                          data-original="{{ photo.sizes.m800.url }}"
                          data-vb-src="{{ photo.sizes.l2048.url }}"
@@ -37,9 +43,10 @@
                          alt="{{ photo.title ?: photo.id }}"
                          src="https://via.assets.so/img.jpg?w={{ photo.sizes.s320.width }}&h={{ photo.sizes.s320.height }}&bg=#111111"
                     />
-                    <div class="caption">
-                        {{ photo.title ?: photo.id }}
+                    <div class="caption" contenteditable="true" tabindex="{{ loop.index + 1 }}">
+                        {{ photo.title }}
                     </div>
+                    <i class="glyphicon glyphicon-star{{ photo.id == album.coverItem.id ? '' : '-empty' }}"></i>
                 </a>
             {% endfor %}
         </div>
@@ -79,10 +86,12 @@
 
 {% block scripts %}
     <script type="text/javascript">
-        var basePath = '{{ base_url }}';
+        const basePath = '{{ base_url }}';
+        const endpoints = {
+            album: '{{ url_for('provider_album', { 'provider': provider.id, 'album': album.id }) }}',
+        }
     </script>
-    <script src="{{ base_url }}/ui/lib/jquery/touchswipe.js"></script>
     <script src="{{ base_url }}/ui/lib/jquery/jquery.lazyload.min.js" type="text/javascript"></script>
     <script src="{{ base_url }}/ui/lib/justifiedGallery.min/jquery.justifiedGallery.min.js" type="text/javascript"></script>
-    <script src="{{ base_url }}/ui/js/set.js" type="text/javascript"></script>
+    <script src="{{ base_url }}/ui/js/edit.js" type="text/javascript"></script>
 {% endblock %}

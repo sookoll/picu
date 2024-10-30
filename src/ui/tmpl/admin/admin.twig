@@ -6,21 +6,18 @@
 
 {% block contents %}
     <div id="admin">
-        {% include 'admin/navbar.twig' %}
+        {% include 'admin/includes/navbar.twig' %}
         <section class="col-xs-12">
             <div class="row">
                 {% for key, provider in providers %}
-                    <div class="col-xs-12 col-sm-6 col-lg-4">
+                    <div class="provider col-xs-12 col-sm-6">
                         <div class="panel panel-default">
                             <div class="panel-heading">
                             <span class="pull-right provider-tools">
                                 {% if provider.authenticated %}
                                     <div class="btn-group btn-group-sm">
-                                        <a href="{{ url_for('provider_remove_cache', { 'provider': key }) }}" class="clear-cache gallery btn btn-default" title="Süngi albumite nimekiri">
-                                            <i class="glyphicon glyphicon-repeat"></i>
-                                        </a>
-                                        <a href="{{ url_for('provider_remove_cache', { 'provider': key, 'album': '*' }) }}" class="clear-cache btn btn-warning" title="Süngi kõik">
-                                            <i class="glyphicon glyphicon-repeat"></i>
+                                        <a href="{{ url_for('import_validate', { 'provider': key }) }}" class="btn btn-default" title="Impordi albumid">
+                                            <i class="glyphicon glyphicon-save"></i> Impordi albumid
                                         </a>
                                         <a href="{{ url_for('provider_logout', { 'provider': key }) }}" title="Log out" class="btn btn-danger">
                                             <i class="glyphicon glyphicon-off"></i>
@@ -36,45 +33,16 @@
                                 <h2 class="panel-title">{{ provider.label }}</h2>
                             </div>
                             <div class="panel-body">
+                                {% if provider.albums | length < 1 %}
+                                    Albumid puuduvad.
+                                    <a href="{{ url_for('import_validate', { 'provider': key }) }}" title="Impordi albumite nimekiri">
+                                        Impordi albumite nimekiri
+                                    </a>
+                                {% else %}
                                 {% for album in provider.albums %}
-                                    <div class="media album">
-                                        <div class="media-left">
-                                            <a href="{{ url_for('album', { 'album': album.id }) }}" target="_blank">
-                                                <img
-                                                    class="media-object"
-                                                    src="{{ album.cover }}"
-                                                    title="{{ album.label }}"
-                                                    alt="{{ album.label }}"/>
-                                            </a>
-                                        </div>
-                                        <div class="media-body info">
-                                            <h4 class="media-heading">
-                                                <a href="{{ url_for('album', { 'album': album.id }) }}" target="_blank">{{ album.label }}</a>
-                                            </h4>
-                                            <div  class="text-muted small">{{ album.description }}</div>
-                                            <div>
-                                                <span>
-                                                    <i class="glyphicon glyphicon-camera"></i>
-                                                    {{ album.photos }}
-                                                </span>
-                                                <span>
-                                                    <i class="glyphicon glyphicon-film"></i>
-                                                    {{ album.videos }}
-                                                </span>
-                                            </div>
-                                            <div class="album-tools">
-                                                <a href="{{ url_for('provider_remove_cache', { 'provider': key, 'album': album.id }) }}" class="clear-cache" title="Süngi albumi puhver">
-                                                    <i class="glyphicon glyphicon-repeat"></i>
-                                                </a>
-                                                <a href="{{ full_url_for('root') }}upload/{{ album.id }}" class="fileupload fileinput-button" title="Lae pilte juurde">
-                                                    <i class="glyphicon glyphicon-open"></i>
-                                                    <input type="file" name="files[]" accept="image/*" multiple />
-                                                </a>
-                                            </div>
-                                            <div class="bar"></div>
-                                        </div>
-                                    </div>
+                                    {% include 'admin/includes/album.twig' %}
                                 {% endfor %}
+                                {% endif %}
                             </div>
                         </div>
                     </div>

@@ -4,18 +4,92 @@ namespace App\Service;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use RuntimeException;
 use Slim\Routing\RouteContext;
 
 class Utilities
 {
-    public static function redirect(string $path, Request $request, Response $response): Response
+    public static function redirect(string $path, Request $request, Response $response, array $data = []): Response
     {
         $routeParser = RouteContext::fromRequest($request)->getRouteParser();
-        $url = $routeParser->urlFor($path);
+        $url = $routeParser->urlFor($path, $data);
 
         return $response
             ->withHeader('Location', $url)
             ->withStatus(302);
+    }
+
+    /**
+     * @param array $settings
+     * @return void
+     */
+    public static function ensureDirectoriesExists(array $settings): void
+    {
+        // create dir if not exist
+        if (!is_dir($settings['cacheDir']) && !mkdir($concurrentDirectory = $settings['cacheDir']) && !is_dir($concurrentDirectory)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
+        }
+        if (!is_dir($settings['tokenDir']) && !mkdir($concurrentDirectory = $settings['tokenDir']) && !is_dir($concurrentDirectory)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
+        }
+    }
+
+    public static function rmdir($dir) {
+        if (!file_exists($dir)) {
+            return true;
+        }
+        if (!is_dir($dir)) {
+            return unlink($dir);
+        }
+        foreach (scandir($dir) as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+            if (!self::rmdir($dir . DIRECTORY_SEPARATOR . $item)) {
+                return false;
+            }
+        }
+
+        return rmdir($dir);
+    }
+
+    public static function safeFn(string $path, string $file): string
+    {
+        $file_name_str = pathinfo($file, PATHINFO_FILENAME);
+        $file_ext = pathinfo($file, PATHINFO_EXTENSION);
+        if ($file_ext !== '') {
+            $file_ext = '.' . $file_ext;
+        }
+
+        // Replaces all spaces with hyphens.
+        $file_name_str = str_replace(' ', '-', $file_name_str);
+        // Removes special chars.
+        $file_name_str = preg_replace('/[^A-Za-z0-9\-\_]/', '', $file_name_str);
+        // Replaces multiple hyphens with single one.
+        $file_name_str = preg_replace('/-+/', '-', $file_name_str);
+
+        if (($file_name_str . $file_ext) === $file) {
+            return $file;
+        }
+
+        $i = 0;
+        while(file_exists("$path/$file_name_str" . $file_ext)) {
+            $i++;
+            $file_name_str .= $i;
+        }
+
+        rename("$path/$file", "$path/$file_name_str" . $file_ext);
+
+        return $file_name_str . $file_ext;
+    }
+
+    public static function serializeStatementCondition(array $conditions, $operator = 'AND'): string
+    {
+        $conditionsString = array_map(function($key) use ($conditions) {
+            return "{$key} {$conditions[$key][0]} {$conditions[$key][1]}";
+        }, array_keys($conditions));
+
+        return implode(" {$operator} ", $conditionsString);
     }
 
     public static function download(string $url, string $referer)
@@ -51,4 +125,33 @@ class Utilities
         //return [$output, $fileSize];
 
     }
+
+    public static function findObjectBy($arr, $key, $value)
+    {
+        foreach ($arr as $element) {
+            if ($value === $element->{$key}) {
+                return $element;
+            }
+        }
+
+        return null;
+    }
+
+    public static function uid(): string
+    {
+        $input = microtime();
+        $length = 8;
+        // Create a raw binary sha256 hash and base64 encode it.
+        $hash_base64 = base64_encode(hash('sha256', $input, true));
+        // Replace non-urlsafe chars to make the string urlsafe.
+        $hash = strtr($hash_base64, '+/_', '---');
+        $hash = str_replace('-', '', $hash);
+        // Trim base64 padding characters from the end.
+        $hash = rtrim($hash, '=');
+        $hash = ltrim($hash, '0123456789');
+
+        // Shorten the string before returning.
+        return substr( $hash, 0, $length );
+    }
+
 }

@@ -1,49 +1,67 @@
 <?php
 namespace App\Controller;
 
-use App\Service\Provider\ProviderInterface;
+use App\Enum\ProviderEnum;
+use App\Model\Album;
 use App\Service\ProviderService;
 use App\Service\Utilities;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Slim\Routing\RouteContext;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 
 final class AdminController extends BaseController
 {
-    public function __construct(ContainerInterface $container, private readonly ProviderService $service)
+    public function __construct(
+        ContainerInterface $container,
+        protected readonly ProviderService $service,
+    )
     {
         parent::__construct($container);
-        $this->service->ensureDirectoriesExists($this->settings);
-        $this->service->initProviders($this->settings['providers'] ?? null, true);
+        set_time_limit(60);
+        Utilities::ensureDirectoriesExists($this->settings);
+        $this->service->initProviders();
     }
 
+    /**
+     * @throws RuntimeError
+     * @throws SyntaxError
+     * @throws LoaderError
+     */
     public function index(Request $request, Response $response, array $args = []): Response
     {
         // enabled service providers
         $providers = [];
-        /** @var $provider ProviderInterface */
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
         foreach ($this->service->getProviders() as $key => $provider) {
             if ($provider->isEnabled()) {
                 $providers[$key] = [
-                    'page' => 'admin',
+                    'id' => $provider->getId(),
                     'label' => $provider->getLabel(),
                     'authenticated' => $provider->isAuthenticated(),
-                    'albums' => $provider->getAlbums(),
+                    'editable' => $provider->isEditable(),
+                    'albums' => $this->service->getAlbumService()->getList($provider),
                 ];
             }
         }
 
-        return $this->render($request, $response, 'admin/admin.twig', ['providers' => $providers]);
+        return $this->render($request, $response, 'admin/admin.twig', [
+            'page' => 'admin',
+            'token' => $this->settings['api_token'],
+            'providers' => $providers
+        ]);
     }
 
 
     public function login(Request $request, Response $response, array $args = []): Response
     {
-        /** @var ProviderInterface $provider */
-        $provider = $this->service->getProvider($args['provider']);
-        if ($provider && $provider->isEnabled() && !$provider->isAuthenticated()) {
-            return $provider->authenticate($request, $response);
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
+        $providerEnum = ProviderEnum::from($args['provider']);
+        $provider = $this->service->getProvider($providerEnum);
+        if ($provider->isEnabled() && !$provider->isAuthenticated()) {
+            return $this->service->getProviderApiService($providerEnum)?->authenticate($request, $response);
         }
 
         return $response->withStatus(400);
@@ -51,29 +69,196 @@ final class AdminController extends BaseController
 
     public function logout(Request $request, Response $response, array $args = []): Response
     {
-        /** @var ProviderInterface $provider */
-        $provider = $this->service->getProvider($args['provider']);
-        if ($provider && $provider->isEnabled() && $provider->isAuthenticated() && $provider->unAuthenticate()) {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
+        $providerEnum = ProviderEnum::from($args['provider']);
+        $provider = $this->service->getProvider($providerEnum);
+        if (
+            $provider->isEnabled() &&
+            $provider->isAuthenticated() &&
+            $this->service->getProviderApiService($providerEnum)?->unAuthenticate()
+        ) {
             return Utilities::redirect('admin', $request, $response);
         }
 
         return $response->withStatus(400);
     }
 
-    public function removeCache(Request $request, Response $response, array $args = []): Response
+    public function validate(Request $request, Response $response, array $args = []): Response
     {
-        /** @var ProviderInterface $provider */
-        $provider = $this->service->getProvider($args['provider']);
-        $album = $args['album'] ?? null;
-        if ($provider && $provider->isEnabled() && $provider->removeCache($album)) {
-            return Utilities::redirect('admin', $request, $response);
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
+        $providerEnum = ProviderEnum::from($args['provider']);
+        $provider = $this->service->getProvider($providerEnum);
+        $data = [];
+        if (
+            $provider->isEnabled() &&
+            $provider->isAuthenticated()
+        ) {
+            $data = [
+                'page' => 'admin',
+                'provider' => [
+                    'id' => $provider->getId(),
+                    'label' => $provider->getLabel(),
+                    'authenticated' => $provider->isAuthenticated(),
+                    'editable' => $provider->isEditable()
+                ],
+                'albums' => $this->service->diff($providerEnum)
+            ];
         }
 
-        return $response->withStatus(400);
+        return $this->render($request, $response, 'admin/import.twig', $data);
+    }
+
+    public function import(Request $request, Response $response, array $args = []): Response
+    {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
+        $providerEnum = ProviderEnum::from($args['provider']);
+        $provider = $this->service->getProvider($providerEnum);
+        $albumFid = $args['album'] ?? null;
+        if (
+            $provider->isEnabled() &&
+            $provider->isAuthenticated() &&
+            $albumFid
+        ) {
+            if ($this->service->sync($providerEnum, $albumFid)) {
+                $result = [];
+                /** @var Album $album */
+                foreach($this->service->diff($providerEnum, $albumFid) as $album) {
+                    $result[] = [
+                        'id' => $album->id,
+                        'fid' => $album->fid,
+                        'photos' => $album->photos,
+                        'videos' => $album->videos,
+                        'status' => $album->getStatus()
+                    ];
+                }
+
+                return $this->json($response, $result);
+            }
+        }
+
+        return $response->withStatus(404);
     }
 
     public function upload(Request $request, Response $response, array $args = []): Response
     {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
+        return $response->withStatus(400);
+    }
+
+    public function album(Request $request, Response $response, array $args = []): Response
+    {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
+        $providerEnum = ProviderEnum::from($args['provider']);
+        $provider = $this->service->getProvider($providerEnum);
+        $albumId = $args['album'] ?? null;
+        $data = [];
+        if (
+            $albumId &&
+            $provider->isEnabled()
+        ) {
+            $album = $this->service->getAlbumService()->get($albumId);
+            if ($album) {
+                $items = $this->service->getItemService()->getList($album);
+                $data = [
+                    'page' => 'set',
+                    'editor' => 'editor',
+                    'provider' => [
+                        'id' => $provider->getId(),
+                        'label' => $provider->getLabel(),
+                        'authenticated' => $provider->isAuthenticated(),
+                        'editable' => $provider->isEditable(),
+                    ],
+                    'album' => $album,
+                    'items' => $items
+                ];
+            }
+        }
+
+        return $this->render($request, $response, 'admin/album.twig', $data);
+    }
+
+    public function updateAlbum(Request $request, Response $response, array $args = []): Response
+    {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
+        $providerEnum = ProviderEnum::from($args['provider']);
+        $provider = $this->service->getProvider($providerEnum);
+        $albumId = $args['album'] ?? null;
+        if (
+            $albumId &&
+            $provider->isEnabled()
+        ) {
+            $album = $this->service->getAlbumService()->get($albumId);
+            if ($album) {
+                $data = $request->getParsedBody();
+                foreach ($data as $key => $val) {
+                    if (property_exists($album, $key)) {
+                        switch ($key) {
+                            case 'public':
+                                $album->{$key} = $val === 'true';
+                                break;
+                            default:
+                                $album->{$key} = $val;
+                        }
+                    }
+                }
+                $this->service->getAlbumService()->update($album);
+
+                return $response->withStatus(204);
+            }
+        }
+
+        return $response->withStatus(400);
+    }
+
+    public function updateItem(Request $request, Response $response, array $args = []): Response
+    {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
+        $providerEnum = ProviderEnum::from($args['provider']);
+        $provider = $this->service->getProvider($providerEnum);
+        $albumId = $args['album'] ?? null;
+        $itemId = $args['item'] ?? null;
+        if (
+            $albumId &&
+            $itemId &&
+            $provider->isEnabled()
+        ) {
+            $item = $this->service->getItemService()->get($itemId);
+            if ($item) {
+                $data = $request->getParsedBody();
+                foreach ($data as $key => $val) {
+                    if (property_exists($item, $key)) {
+                        $item->{$key} = $val;
+                    }
+                }
+                $this->service->getItemService()->update($item);
+
+                return $response->withStatus(204);
+            }
+        }
+
+        return $response->withStatus(400);
+    }
+
+    public function delete(Request $request, Response $response, array $args = []): Response
+    {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
+        $providerEnum = ProviderEnum::from($args['provider']);
+        $provider = $this->service->getProvider($providerEnum);
+        $albumId = $args['album'] ?? null;
+        if (
+            $albumId &&
+            $provider->isEnabled()
+        ) {
+            $album = $this->service->getAlbumService()->get($albumId);
+            if ($album) {
+                $this->service->getProviderApiService($providerEnum)?->clearCache($album);
+                $this->service->getItemService()->deleteAll($album);
+                $this->service->getAlbumService()->delete($album);
+
+                return $response->withStatus(204);
+            }
+        }
+
         return $response->withStatus(400);
     }
 }
