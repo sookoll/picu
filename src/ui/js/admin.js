@@ -40,7 +40,18 @@
         });
     }
 
-    const importAlbum = (el) => {
+    function iterateImport(list, i) {
+        if (i > list.length - 1) {
+            return;
+        }
+        let el = list[i];
+        importAlbum(el, () => {
+            i += 1
+            iterateImport(list, i);
+        })
+    }
+
+    const importAlbum = (el, cb = null) => {
         request(el, el.href, {}, (result) => {
             if (result !== false && result.length > 0) {
                 const album = result[0];
@@ -64,6 +75,9 @@
                 }
                 albumEl.find('.status .label')
             }
+            if (typeof cb === 'function') {
+                cb()
+            }
         })
     }
 
@@ -77,18 +91,6 @@
                 }
             }
         }, 'DELETE')
-    });
-
-    $('.album-set-private').on('click', function(e) {
-        e.preventDefault();
-        request(e.target, e.target.href, { public: false }, (result) => {
-            if (result !== false) {
-                $(e.target).closest('.info').find('.status .label')
-                    .text('PRIVATE')
-                    .removeClass('label-success')
-                    .addClass('label-danger')
-            }
-        }, 'PUT')
     });
 
     $('.album-set-public').on('click', function(e) {
@@ -105,11 +107,6 @@
         }, 'PUT')
     });
 
-    $('.album-autorotate').on('click', function(e) {
-        e.preventDefault();
-        request(e.target, e.target.href)
-    })
-
     $('.album-import').on('click', function(e) {
         e.preventDefault();
         importAlbum(e.target);
@@ -119,12 +116,9 @@
         e.preventDefault();
         var list = []
         $('.album-import').each(function(i, item) {
-            console.log(item)
             list.push(item)
         })
-        $(this).closest('.info').find('.status label').addClass('hidden');
-        $(this).closest('.info').find('.status .spinner').removeClass('hidden');
-        console.log(list)
+        iterateImport(list, 0);
     })
 
     $('#admin .thumbs').on('jg.complete', function (e) {

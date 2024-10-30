@@ -3,7 +3,7 @@
         <a href="{{ url_for('album', { 'album': album.id }) }}" target="_blank">
             <img
                 class="media-object"
-                src="{{ album.coverItem.sizes.sq150.url ?: album.coverItem.url }}?token={{ token }}"
+                src="{{ album.coverItem.sizes.sq150.url ?: album.coverItem.url }}"
                 title="{{ album.title }}"
                 alt="{{ album.title }}"/>
         </a>
@@ -38,7 +38,10 @@
             <a href="{{ url_for('album', { 'album': album.id }) }}" target="_blank">{{ album.title }}</a>
         </h4>
         <div  class="text-muted small">{{ album.description }}</div>
-        <div  class="text-muted small">{{ album.id }} | {{ album.fid }}</div>
+        <div  class="text-muted small">
+            <a href="{{ url_for('api_item', { 'album': album.id }, { 'token': token }) }}" target="_blank">{{ album.id }}</a>
+             | {{ album.fid }}
+        </div>
         <div class="items-count {{ album.status and album.status.type.name == 'OK' ? 'text-success' : '' }}">
             <span>
                 <i class="glyphicon glyphicon-camera"></i>
@@ -63,24 +66,24 @@
         </div>
         <div class="album-tools">
             {% if not album.status and album.id %}
-                <a href="{{ full_url_for('root') }}upload/{{ album.id }}" class="fileupload fileinput-button" title="Lae pilte juurde">
+                <a href="{{ full_url_for('root') }}upload/{{ album.id }}" class="fileupload fileinput-button btn btn-sm btn-link disabled" title="Lae pilte juurde">
                     <i class="glyphicon glyphicon-open"></i> Upload
                     <input type="file" name="files[]" accept="image/*" multiple />
                 </a>
-                <a href="{{ url_for('album_delete', { 'provider': provider.id, 'album': album.id }) }}" class="album-delete" title="Eemalda album">
+                <a href="{{ url_for('album_delete', { 'provider': provider.id, 'album': album.id }) }}" class="btn btn-sm btn-link album-delete" title="Eemalda album">
                     <i class="glyphicon glyphicon-remove"></i> Eemalda album
                 </a>
                 {% if provider.editable %}
-                    <a href="{{ url_for('provider_album', { 'provider': provider.id, 'album': album.id }) }}" title="Muuda">
+                    <a href="{{ url_for('provider_album', { 'provider': provider.id, 'album': album.id }) }}" class="btn btn-sm btn-link" title="Muuda">
                         Muuda
                     </a>
                 {% endif %}
-                <a href="{{ url_for('provider_album', { 'provider': provider.id, 'album': album.id }) }}" class="album-set-public" data-public="{{ album.public ? 1 : 0 }}">
+                <a href="{{ url_for('provider_album', { 'provider': provider.id, 'album': album.id }) }}" class="album-set-public btn btn-sm btn-link" data-public="{{ album.public ? 1 : 0 }}">
                     {{ album.public ? 'Määra privaatseks' : 'Määra avalikuks' }}
                 </a>
             {% else %}
                 {% if album.status and album.status.type.name != 'OK' %}
-                <a href="{{ url_for('import_sync', { 'provider': provider.id, 'album': album.fid }) }}" class="album-import" title="Impordi see album">
+                <a href="{{ url_for('import_sync', { 'provider': provider.id, 'album': album.fid }) }}" class="album-import btn btn-sm btn-link" title="Impordi see album">
                     <i class="glyphicon glyphicon-save"></i> Impordi see album
                 </a>
                 {% endif %}

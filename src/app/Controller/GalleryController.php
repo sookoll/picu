@@ -2,7 +2,12 @@
 
 namespace App\Controller;
 
+use App\Enum\ItemSizeEnum;
+use App\Enum\ProviderEnum;
+use App\Model\Photo;
 use App\Service\AlbumService;
+use App\Service\Api\DiskService;
+use App\Service\Api\FlickrService;
 use App\Service\ItemService;
 use App\Service\Utilities;
 use Psr\Container\ContainerInterface;
@@ -17,6 +22,8 @@ class GalleryController extends BaseController
         ContainerInterface $container,
         protected AlbumService $albumService,
         protected ItemService $itemService,
+        protected readonly FlickrService $flickrService,
+        protected readonly DiskService $diskService,
     )
     {
         parent::__construct($container);
@@ -48,66 +55,47 @@ class GalleryController extends BaseController
 
     public function photo(Request $request, Response $response, array $args = []): Response
     {
-        $album = $args['album'];
-        $photo = $args['photo'];
-        if (!$album || !$photo) {
+        $albumId = $args['album'] ?? null;
+        $itemId = $args['item'] ?? null;
+        if (!$albumId || !$itemId) {
             throw new HttpNotFoundException($request);
         }
-        $provider = $this->albumService->getProviderByAlbumId($album);
 
-        if ($provider) {
-            $photoset = $provider->getMedia($album, $photo);
-            if (!$photoset) {
-                throw new HttpNotFoundException($request);
+        $this->itemService->setBaseUrl($request->getAttribute('base_url'));
+        $item = $this->itemService->get($itemId);
+
+        if ($item) {
+            $queryParams = $request->getQueryParams();
+            if (isset($queryParams['download'])) {
+                return $this->download($request, $response, $item);
             }
 
             return $this->render($request, $response, 'photo.twig', [
                 'page' => 'photo',
-                'title' => $photoset['thumbnail']['title'],
-                'photo' => $photoset['thumbnail'],
-                'set' => $photoset,
+                'item' => $item,
             ]);
         }
 
         return $response->withStatus(404);
     }
 
-    public function download(Request $request, Response $response, array $args = []): Response
+    private function download(Request $request, Response $response, Photo $item): Response
     {
-        $album = $args['album'];
-        $photo = $args['photo'];
-        if (!$album || !$photo) {
-            throw new HttpNotFoundException($request);
+        $file = null;
+        $this->albumService->setBaseUrl($request->getAttribute('base_url'));
+        $album = $this->albumService->get($item->album);
+        if ($album) {
+            $providerEnum = ProviderEnum::from($album->getProvider()->getId());
+            $providerApi = match ($providerEnum) {
+                ProviderEnum::FLICKR => $this->flickrService,
+                ProviderEnum::DISK => $this->diskService,
+            };
+
+            $file = $providerApi?->readFile($album, $item);
         }
-        $provider = $this->albumService->getProviderByAlbumId($album);
 
-        if ($provider) {
-            $photoset = $provider->getMedia($album, $photo);
-            if (!$photoset) {
-                throw new HttpNotFoundException($request);
-            }
-            $src = $photoset['thumbnail']['url_o'] ?? null;
-
-            if ($src) {
-                $photoHandle = Utilities::download($src, $this->settings['download']['referer']);
-                $filename = basename($src);
-                $file_extension = strtolower(substr(strrchr($filename,'.'),1));
-                $ctype = match ($file_extension) {
-                    'gif' => 'image/gif',
-                    'png' => 'image/png',
-                    'jpg', 'jpeg' => 'image/jpg',
-                    default => throw new HttpNotFoundException($request)
-                };
-                $stat = fstat($photoHandle);
-
-                return $response->withHeader('Content-type', $ctype)
-                    ->withHeader('Content-Disposition', 'attachment; filename="'.$filename.'"')
-                    ->withAddedHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-                    ->withHeader('Cache-Control', 'post-check=0, pre-check=0')
-                    ->withHeader('Pragma', 'no-cache')
-                    ->withHeader('Content-length', $stat['size'])
-                    ->withBody((new Stream($photoHandle)));
-            }
+        if ($file) {
+            return $this->file($request, $response, $file, true);
         }
 
         return $response->withStatus(404);

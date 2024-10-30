@@ -13,7 +13,6 @@ use App\Service\BaseService;
 use App\Service\ImageService;
 use App\Service\Utilities;
 use DateTime;
-use ImagickException;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -82,7 +81,7 @@ class DiskService extends BaseService implements ApiInterface
             $videos = preg_grep($this->conf['accept_video_file_types'], $names);
 
             $album = new Album();
-            $album->fid = $set['name'];
+            $album->fid = $set['id'];
             $album->setProvider($this->provider);
             $album->title = $set['name'];
             if (count($images)) {
@@ -196,7 +195,6 @@ class DiskService extends BaseService implements ApiInterface
             $this->logger->error('Read list failed from: ' . $path);
             return $data;
         }
-
         // read content into array
         $list = scandir($path);
         // loop
@@ -206,10 +204,13 @@ class DiskService extends BaseService implements ApiInterface
                 continue;
             }
 
+            $safeName = Utilities::safeFn($path, $item);
+
             $data[] = [
-                'name' => urlencode($item),
-                'path' => "$pathPart/$item",
-                'fullPath' => $subpath,
+                'name' => $item,
+                'id' => $safeName,
+                'path' => "$pathPart/$safeName",
+                'fullPath' => "$path/$safeName",
             ];
         }
 
@@ -250,7 +251,7 @@ class DiskService extends BaseService implements ApiInterface
     private function getItemsByAlbumId(string $albumId): array
     {
         $sets = $this->getListOnDisk($this->conf['import_path']);
-        $names = array_column($sets, 'name');
+        $names = array_column($sets, 'id');
         $i = array_search($albumId, $names, true);
         if ($i === false) {
             throw new RuntimeException("Album $albumId not found");

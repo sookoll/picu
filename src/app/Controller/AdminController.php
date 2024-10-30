@@ -154,14 +154,14 @@ final class AdminController extends BaseController
         $data = [];
         if (
             $albumId &&
-            $provider->isEnabled() &&
-            $provider->isAuthenticated()
+            $provider->isEnabled()
         ) {
             $album = $this->service->getAlbumService()->get($albumId);
             if ($album) {
                 $items = $this->service->getItemService()->getList($album);
                 $data = [
-                    'page' => 'admin',
+                    'page' => 'set',
+                    'editor' => 'editor',
                     'provider' => [
                         'id' => $provider->getId(),
                         'label' => $provider->getLabel(),
@@ -185,8 +185,7 @@ final class AdminController extends BaseController
         $albumId = $args['album'] ?? null;
         if (
             $albumId &&
-            $provider->isEnabled() &&
-            $provider->isAuthenticated()
+            $provider->isEnabled()
         ) {
             $album = $this->service->getAlbumService()->get($albumId);
             if ($album) {
@@ -211,6 +210,35 @@ final class AdminController extends BaseController
         return $response->withStatus(400);
     }
 
+    public function updateItem(Request $request, Response $response, array $args = []): Response
+    {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
+        $providerEnum = ProviderEnum::from($args['provider']);
+        $provider = $this->service->getProvider($providerEnum);
+        $albumId = $args['album'] ?? null;
+        $itemId = $args['item'] ?? null;
+        if (
+            $albumId &&
+            $itemId &&
+            $provider->isEnabled()
+        ) {
+            $item = $this->service->getItemService()->get($itemId);
+            if ($item) {
+                $data = $request->getParsedBody();
+                foreach ($data as $key => $val) {
+                    if (property_exists($item, $key)) {
+                        $item->{$key} = $val;
+                    }
+                }
+                $this->service->getItemService()->update($item);
+
+                return $response->withStatus(204);
+            }
+        }
+
+        return $response->withStatus(400);
+    }
+
     public function delete(Request $request, Response $response, array $args = []): Response
     {
         $this->service->setBaseUrl($request->getAttribute('base_url'));
@@ -219,8 +247,7 @@ final class AdminController extends BaseController
         $albumId = $args['album'] ?? null;
         if (
             $albumId &&
-            $provider->isEnabled() &&
-            $provider->isAuthenticated()
+            $provider->isEnabled()
         ) {
             $album = $this->service->getAlbumService()->get($albumId);
             if ($album) {

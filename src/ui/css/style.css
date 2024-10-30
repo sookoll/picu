@@ -244,3 +244,30 @@ a, a:hover, a:visited {
 #photo #viewbox {
     display:block;
 }
+
+/* Album edit */
+#editor header h1 {
+    line-height: normal;
+    margin-top: 130px;
+}
+#editor header h1 span {
+    display: inline-block;
+    min-height: 46px;
+    min-width: 600px;
+}
+#editor header textarea {
+    display: block;
+    width: 600px;
+    height: 100px;
+    margin: 10px auto 0;
+    background-color: rgb(255 255 255 / 10%);
+    backdrop-filter: blur(10px);
+    text-align: center;
+}
+#editor .viewbox i {
+    float: right;
+    padding: 4px;
+    font-size: 2.5rem;
+    color: #f0ad4e;
+    text-shadow: 0 0 BLACK;
+}

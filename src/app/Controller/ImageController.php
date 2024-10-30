@@ -30,22 +30,22 @@ class ImageController extends BaseController
     public function image(Request $request, Response $response, array $args = []): Response
     {
         $this->itemService->setBaseUrl($request->getAttribute('base_url'));
-        $this->albumService->setBaseUrl($request->getAttribute('base_url'));
         $itemId = $args['item'] ?? null;
         $sizeId = $args['size'] ?? null;
         $item = $this->itemService->get($itemId);
         $file = null;
 
         if ($item) {
-            $set = $this->albumService->getList(null, $item->album);
-            if (count($set) === 1) {
-                $providerEnum = ProviderEnum::from($set[0]->getProvider()->getId());
+            $this->albumService->setBaseUrl($request->getAttribute('base_url'));
+            $album = $this->albumService->get($item->album);
+            if ($album) {
+                $providerEnum = ProviderEnum::from($album->getProvider()->getId());
                 $providerApi = match ($providerEnum) {
                     ProviderEnum::FLICKR => $this->flickrService,
                     ProviderEnum::DISK => $this->diskService,
                 };
 
-                $file = $providerApi?->readFile($set[0], $item, ItemSizeEnum::from($sizeId));
+                $file = $providerApi?->readFile($album, $item, ItemSizeEnum::from($sizeId));
             }
         }
 

@@ -52,7 +52,10 @@ return function (App $app) {
         $group->put('/{provider}/{album}', AdminController::class . ':updateAlbum')
             ->setName('provider_album')
             ->add(AuthenticationMiddleware::class);
-        $group->delete('/{provider}/{album}[/{item}]', AdminController::class . ':delete')
+        $group->put('/{provider}/{album}/{item}', AdminController::class . ':updateItem')
+            ->setName('provider_item')
+            ->add(AuthenticationMiddleware::class);
+        $group->delete('/{provider}/{album}', AdminController::class . ':delete')
             ->setName('album_delete')
             ->add(AuthenticationMiddleware::class);
     });
@@ -63,7 +66,7 @@ return function (App $app) {
         $group->get('/item/sizes', ApiController::class . ':sizes')
             ->setName('api_item_sizes');
         $group->get('/item/{album}[/{item}]', ApiController::class . ':item')
-            ->setName('api_item_sizes');
+            ->setName('api_item');
     });
     // Image
     $app->get('/media/cache/{album}/{item}_{size}.{ext}', ImageController::class . ':image')->setName('api_image');
@@ -74,7 +77,7 @@ return function (App $app) {
     $app->get('/d/{album}/{photo}', LegacyGalleryController::class . ':download');
 
     // Gallery endpoints
-    $app->get('/{album}[/{item}]', GalleryController::class . ':album')->setName('album');
     $app->get('/{album}_{item}', GalleryController::class . ':photo')->setName('item');
-    $app->get('/{album}_{item}?download', GalleryController::class . ':download')->setName('download');
+    $app->get('/{album}_{item}?download', GalleryController::class . ':photo')->setName('download');
+    $app->get('/{album}[/{item}]', GalleryController::class . ':album')->setName('album');
 };

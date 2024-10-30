@@ -53,6 +53,36 @@ class Utilities
         return rmdir($dir);
     }
 
+    public static function safeFn(string $path, string $file): string
+    {
+        $file_name_str = pathinfo($file, PATHINFO_FILENAME);
+        $file_ext = pathinfo($file, PATHINFO_EXTENSION);
+        if ($file_ext !== '') {
+            $file_ext = '.' . $file_ext;
+        }
+
+        // Replaces all spaces with hyphens.
+        $file_name_str = str_replace(' ', '-', $file_name_str);
+        // Removes special chars.
+        $file_name_str = preg_replace('/[^A-Za-z0-9\-\_]/', '', $file_name_str);
+        // Replaces multiple hyphens with single one.
+        $file_name_str = preg_replace('/-+/', '-', $file_name_str);
+
+        if (($file_name_str . $file_ext) === $file) {
+            return $file;
+        }
+
+        $i = 0;
+        while(file_exists("$path/$file_name_str" . $file_ext)) {
+            $i++;
+            $file_name_str .= $i;
+        }
+
+        rename("$path/$file", "$path/$file_name_str" . $file_ext);
+
+        return $file_name_str . $file_ext;
+    }
+
     public static function serializeStatementCondition(array $conditions, $operator = 'AND'): string
     {
         $conditionsString = array_map(function($key) use ($conditions) {
