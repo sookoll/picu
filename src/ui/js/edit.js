@@ -78,8 +78,8 @@
         const itemId = $(e.target).closest('a').data('fid');
         albumUpdate({ cover: itemId }, (result) => {
             if (result !== false) {
-                $('#editor .viewbox i').removeClass('glyphicon-star').addClass('glyphicon-star-empty')
-                $(e.target).toggleClass('glyphicon-star-empty glyphicon-star')
+                $('#editor .viewbox i').removeClass('active');
+                $(e.target).addClass('active')
             }
         })
     })

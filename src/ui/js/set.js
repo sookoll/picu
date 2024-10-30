@@ -31,8 +31,8 @@ ViewBox.prototype = {
 
     },
 
-    open : function(href){
-        href = this.formatHref(href);
+    open : function(url){
+        href = this.formatHref(url);
         href_ = href.split('/');
 
         // already open
@@ -296,7 +296,7 @@ ViewBox.prototype = {
             e.preventDefault();
             if(!vb.is_open)
                 return;
-            var href = vb.formatHref(location.pathname).split('/');
+            var href = vb.formatHref(location.href).split('/');
             history.pushState(null, null, vb.path + '/' + href[0]);
             vb.close();
         })
@@ -312,8 +312,7 @@ ViewBox.prototype = {
         });
 
     $(window).bind('popstate', function() {
-        //var href = location.pathname.replace(/^.*[\\/]/, ""); // get filename only
-        var href = vb.formatHref(location.pathname);
+        var href = vb.formatHref(location.href);
         if(href && href.match(/\//g) && href.match(/\//g).length > 0)
             vb.open(vb.path + '/' + href);
         else
@@ -346,7 +345,7 @@ ViewBox.prototype = {
                 if(!vb.is_open)
                     return;
                 e.preventDefault();
-                var href = vb.formatHref(location.pathname).split('/');
+                var href = vb.formatHref(location.href).split('/');
                 history.pushState(null, null, vb.path + '/' + href[0]);
                 vb.close();
             break;
