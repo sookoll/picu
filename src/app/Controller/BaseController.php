@@ -71,6 +71,7 @@ abstract class BaseController
         $params['user'] = $request->getAttribute('user');
         $params['base_url'] = $request->getAttribute('base_url');
         $params['title'] = $params['title'] ?? 'Picu';
+        $params['version'] = $this->settings['version'];
 
         return $this->view->render($response, $template, $params);
     }
