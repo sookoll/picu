@@ -9,13 +9,8 @@ use App\Controller\LegacyGalleryController;
 use App\Controller\HomeController;
 use App\Controller\ImageController;
 use App\Middleware\AuthenticationMiddleware;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ResponseInterface as Response;
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\App;
 use Slim\Interfaces\RouteCollectorProxyInterface as Group;
-use Slim\Routing\RouteContext;
 
 return function (App $app) {
     $container = $app->getContainer();

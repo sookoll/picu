@@ -13,13 +13,14 @@ return static function (ContainerBuilder $containerBuilder) {
     $dotenv->required('ADMIN_PASS');
 
     $env = $_ENV['ENVIRONMENT'];
+    $basePath = $_ENV['BASE_PATH'] ?? '';
     $cacheDir = $rootPath . '/var/cache';
     $tokenDir = $rootPath . '/var/tokens';
 
     $settings = [
         'environment' => $env,
         // Base path
-        'base_path' => $_ENV['BASE_PATH'] ?? '',
+        'base_path' => $basePath,
         // Admin user
         'admin_user' => $_ENV['ADMIN_USER'],
         'admin_pass' => $_ENV['ADMIN_PASS'],

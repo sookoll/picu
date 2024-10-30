@@ -1,7 +1,7 @@
-picu
+Picu
 ====
 
-Small flickr based private photos gallery
+Your personal photo gallery. Can serve photos from Flickr and/or from local disk.
 
 ## Setup
 

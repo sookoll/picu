@@ -6,7 +6,6 @@
  */
 
 use DI\ContainerBuilder;
-use Psr\Log\LoggerInterface;
 use Slim\Factory\AppFactory;
 
 require __DIR__ . '/vendor/autoload.php';
