@@ -12,6 +12,8 @@ return static function (ContainerBuilder $containerBuilder) {
     $dotenv->required('ADMIN_USER');
     $dotenv->required('ADMIN_PASS');
 
+    $composerJson = json_decode(file_get_contents($rootPath . '/composer.json'), true, 512, JSON_THROW_ON_ERROR);
+
     $env = $_ENV['ENVIRONMENT'];
     $basePath = $_ENV['BASE_PATH'] ?? '';
     $cacheDir = $rootPath . '/var/cache';
@@ -19,6 +21,7 @@ return static function (ContainerBuilder $containerBuilder) {
 
     $settings = [
         'environment' => $env,
+        'version' => $composerJson['version'],
         // Base path
         'base_path' => $basePath,
         // Admin user

@@ -1,6 +1,6 @@
 {
     "name": "sookoll/picu",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "description": "Personal photo gallery based on Flickr API private photos",
     "homepage": "https://sookoll.ee/picu",
     "config": {
