@@ -13,11 +13,11 @@ final class InitialSetup extends AbstractMigration
         $this->execute("
             CREATE TABLE `picu_album` (
                 `id` varchar(36) NOT NULL PRIMARY KEY,
-                `fid` varchar(50) NOT NULL,
+                `fid` varchar(100) NOT NULL,
                 `provider` varchar(10) NOT NULL,
-                `title` varchar(50),
+                `title` varchar(100),
                 `description` text,
-                `cover` varchar(50),
+                `cover` varchar(100),
                 `owner` varchar(50),
                 `public` int(1) DEFAULT 0,
                 `sort` int(5),
@@ -30,9 +30,9 @@ final class InitialSetup extends AbstractMigration
         $this->execute("
             CREATE TABLE `picu_item` (
                 `id` varchar(36) NOT NULL PRIMARY KEY,
-                `fid` varchar(50) NOT NULL,
+                `fid` varchar(100) NOT NULL,
                 `album` varchar(36) NOT NULL,
-                `title` varchar(50),
+                `title` varchar(100),
                 `description` text,
                 `type` varchar(10) NOT NULL DEFAULT 'image',
                 `datetaken` datetime,

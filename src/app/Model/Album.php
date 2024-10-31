@@ -9,10 +9,10 @@ class Album extends Item
     public bool $public = false;
     public int $photos = 0;
     public int $videos = 0;
-    private Provider $provider;
-    private Photo $coverItem;
+    private ?Provider $provider = null;
+    private ?Photo $coverItem = null;
 
-    public function getProvider(): Provider
+    public function getProvider(): ?Provider
     {
         return $this->provider;
     }
@@ -22,7 +22,7 @@ class Album extends Item
         $this->provider = $provider;
     }
 
-    public function getCoverItem(): Photo
+    public function getCoverItem(): ?Photo
     {
         return $this->coverItem;
     }

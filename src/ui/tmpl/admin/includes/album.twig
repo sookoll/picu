@@ -1,11 +1,19 @@
 <div class="media album" id="{{ album.id }}" data-fid="{{ album.fid }}">
     <div class="media-left">
         <a href="{{ url_for('album', { 'album': album.id }) }}" target="_blank">
+            {% if album.coverItem %}
             <img
                 class="media-object"
                 src="{{ album.coverItem.sizes.sq150.url ?: album.coverItem.url }}"
                 title="{{ album.title }}"
                 alt="{{ album.title }}"/>
+            {% else %}
+            <img
+                class="media-object"
+                src="{{ placeholder() }}"
+                title="{{ album.title }}"
+                alt="{{ album.title }}"/>
+            {% endif %}
         </a>
 
     </div>

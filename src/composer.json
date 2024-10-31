@@ -1,6 +1,6 @@
 {
     "name": "sookoll/picu",
-    "version": "2.1.2",
+    "version": "2.2.0",
     "description": "Personal photo gallery based on Flickr API private photos",
     "homepage": "https://sookoll.ee/picu",
     "config": {
@@ -13,6 +13,7 @@
         "ext-imagick": "*",
         "ext-json": "*",
         "ext-pdo": "*",
+        "ext-fileinfo": "*",
         "bryanjhv/slim-session": "^4.1",
         "lulco/phoenix": "^2.6",
         "monolog/monolog": "^3.6",

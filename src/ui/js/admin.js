@@ -56,7 +56,7 @@
             if (result !== false && result.length > 0) {
                 const album = result[0];
                 const type = album.status.type.toUpperCase();
-                const albumEl = $(`.album[data-fid=${album.fid}]`)
+                const albumEl = $(`.album[data-fid="${album.fid}"]`)
                 if (albumEl.length) {
                     albumEl.find('.status .label').text(type)
                         .attr('class', 'label ' + statusCLasses[type])

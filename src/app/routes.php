@@ -64,7 +64,9 @@ return function (App $app) {
             ->setName('api_item');
     });
     // Image
-    $app->get('/media/cache/{album}/{item}_{size}.{ext}', ImageController::class . ':image')->setName('api_image');
+    if ($settings['providers']['disk']['enabled']) {
+        $app->get($settings['providers']['disk']['cachePath'].'/{album}/{item}_{size}.{ext}', ImageController::class . ':image')->setName('api_image');
+    }
 
     // Deprecated: Legacy gallery endpoints
     $app->get('/a/{album}[/{photo}]', LegacyGalleryController::class . ':album');

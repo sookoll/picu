@@ -41,7 +41,7 @@
                          width="{{ photo.sizes.s320.width }}"
                          height="{{ photo.sizes.s320.height }}"
                          alt="{{ photo.title ?: photo.id }}"
-                         src="https://via.assets.so/img.jpg?w={{ photo.sizes.s320.width }}&h={{ photo.sizes.s320.height }}&bg=#111111"
+                         src="{{ placeholder(photo.sizes.s320.width, photo.sizes.s320.height, photo.title ?: photo.id) }}"
                     />
                     <div class="caption" contenteditable="true" tabindex="{{ loop.index + 1 }}">
                         {{ photo.title }}

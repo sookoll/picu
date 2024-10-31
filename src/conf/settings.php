@@ -5,6 +5,7 @@ use Dotenv\Dotenv;
 use Monolog\Level;
 
 return static function (ContainerBuilder $containerBuilder) {
+    $docRoot = $_SERVER['DOCUMENT_ROOT'];
     $rootPath = dirname(__DIR__);
     $dotenv = Dotenv::createImmutable($rootPath);
     $dotenv->load();
@@ -22,12 +23,10 @@ return static function (ContainerBuilder $containerBuilder) {
     $settings = [
         'environment' => $env,
         'version' => $composerJson['version'],
+        // Document root
+        'documentRoot' => $docRoot,
         // Base path
-        'base_path' => $basePath,
-        // Admin user
-        'admin_user' => $_ENV['ADMIN_USER'],
-        'admin_pass' => $_ENV['ADMIN_PASS'],
-        'api_token' => $_ENV['API_TOKEN'],
+        'basePath' => $basePath,
         // Root path
         'rootPath' => $rootPath,
         // Cache dir
@@ -36,6 +35,10 @@ return static function (ContainerBuilder $containerBuilder) {
         'tokenDir' => $tokenDir,
         // Route cache
         'route_cache' => $cacheDir . '/routes',
+        // Admin user
+        'admin_user' => $_ENV['ADMIN_USER'],
+        'admin_pass' => $_ENV['ADMIN_PASS'],
+        'api_token' => $_ENV['API_TOKEN'],
         // Database settings
         'db' => [
             'host' => $_ENV['DB_HOST'],
@@ -44,6 +47,7 @@ return static function (ContainerBuilder $containerBuilder) {
             'user' => $_ENV['DB_USER'],
             'pass' => $_ENV['DB_PASS'],
         ],
+        'placeholder' => $_ENV['IMG_PLACEHOLDER'],
         // View settings
         'view' => [
             'template_path' => $rootPath . '/ui/tmpl',
@@ -77,16 +81,15 @@ return static function (ContainerBuilder $containerBuilder) {
                     'l1600'=> 'h',
                     'l2048'=> 'k',
                 ],
-                'th_size' => 300,
-                'vb_size' => 'k',
-                'import_max_count' => (int)$_ENV['FLICKR_IMPORT_MAX'],
             ],
             // Local disk provider
             'disk' => [
                 'enabled' => $_ENV['DISK_ENABLED'] === 'true',
                 'editable' => true,
-                'import_path' => $_ENV['DISK_GALLERY_PATH'],
-                'cache_path' => $_ENV['DISK_CACHE_PATH'],
+                // from documentRoot
+                'importPath' => $_ENV['DISK_GALLERY_PATH'],
+                // from basePath
+                'cachePath' => $_ENV['DISK_CACHE_PATH'],
                 'accept_image_file_types' => '/\.(gif|jpe?g|tif|png)$/i',
                 'accept_video_file_types' => '/\.(mov|mpeg|mp4)$/i',
                 'sizes' => [
@@ -98,9 +101,6 @@ return static function (ContainerBuilder $containerBuilder) {
                     'l1600'=> 1600,
                     'l2048'=> 2048,
                 ],
-                'th_size' => 300,
-                'vb_size' => 'l2048',
-                'import_max_count' => (int)$_ENV['DISK_IMPORT_MAX'],
             ]
         ],
         // upload
