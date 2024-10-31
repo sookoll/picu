@@ -25,46 +25,43 @@ class Utilities
      */
     public static function ensureDirectoriesExists(array $settings): void
     {
-        // create dir if not exist
-        if (!is_dir($settings['cacheDir']) && !mkdir($concurrentDirectory = $settings['cacheDir']) && !is_dir($concurrentDirectory)) {
-            throw new RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
-        }
-        if (!is_dir($settings['tokenDir']) && !mkdir($concurrentDirectory = $settings['tokenDir']) && !is_dir($concurrentDirectory)) {
-            throw new RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
-        }
+        self::ensureDirectoryExists($settings['cacheDir']);
+        self::ensureDirectoryExists($settings['tokenDir']);
     }
 
-    public static function rmdir($dir) {
-        if (!file_exists($dir)) {
+    public static function deleteDir($path): bool
+    {
+        if (!file_exists($path) || empty($path)) {
             return true;
         }
-        if (!is_dir($dir)) {
-            return unlink($dir);
-        }
-        foreach (scandir($dir) as $item) {
-            if ($item === '.' || $item === '..') {
-                continue;
-            }
-            if (!self::rmdir($dir . DIRECTORY_SEPARATOR . $item)) {
-                return false;
-            }
-        }
+        $class_func = array(__CLASS__, __FUNCTION__);
 
-        return rmdir($dir);
+        return is_file($path) ?
+            @unlink($path) :
+            array_map($class_func, glob($path.'/*')) === @rmdir($path);
     }
 
     public static function safeFn(string $path, string $file): string
     {
-        $file_name_str = pathinfo($file, PATHINFO_FILENAME);
-        $file_ext = pathinfo($file, PATHINFO_EXTENSION);
-        if ($file_ext !== '') {
-            $file_ext = '.' . $file_ext;
+        if (!file_exists("$path/$file")) {
+            return $file;
+        }
+        if (is_dir("$path/$file")) {
+            $file_name_str = $file;
+            $file_ext = '';
+        }
+        else {
+            $file_name_str = pathinfo($file, PATHINFO_FILENAME);
+            $file_ext = pathinfo($file, PATHINFO_EXTENSION);
+            if ($file_ext !== '') {
+                $file_ext = '.' . $file_ext;
+            }
         }
 
         // Replaces all spaces with hyphens.
         $file_name_str = str_replace(' ', '-', $file_name_str);
         // Removes special chars.
-        $file_name_str = preg_replace('/[^A-Za-z0-9\-\_]/', '', $file_name_str);
+        $file_name_str = preg_replace('/[^A-Za-z0-9\-]/', '', $file_name_str);
         // Replaces multiple hyphens with single one.
         $file_name_str = preg_replace('/-+/', '-', $file_name_str);
 
@@ -152,6 +149,13 @@ class Utilities
 
         // Shorten the string before returning.
         return substr( $hash, 0, $length );
+    }
+
+    public static function ensureDirectoryExists(string $path): void
+    {
+        if (!file_exists($path) && !mkdir($path, 0777, true) && !is_dir($path)) {
+            throw new RuntimeException(sprintf('Directory "%s" was not created', $path));
+        }
     }
 
 }

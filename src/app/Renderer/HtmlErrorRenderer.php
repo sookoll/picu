@@ -28,7 +28,7 @@ class HtmlErrorRenderer implements ErrorRendererInterface
     {
         if ($exception->getCode() === 404) {
             return $this->view->fetch('error/404.twig', [
-                'base_url' => $this->settings['base_path']
+                'base_url' => $this->settings['basePath']
             ]);
         }
 
@@ -38,7 +38,7 @@ class HtmlErrorRenderer implements ErrorRendererInterface
         }
 
         return $this->view->fetch('error/default.twig', [
-            'base_url' => $this->settings['base_path'],
+            'base_url' => $this->settings['basePath'],
             'title' => $title,
             'debug' => $displayErrorDetails,
             'type' => get_class($exception),

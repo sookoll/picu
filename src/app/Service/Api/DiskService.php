@@ -22,11 +22,15 @@ class DiskService extends BaseService implements ApiInterface
 {
     private Provider $provider;
     private array $conf;
+    private string $importPath;
+    private string $cachePath;
 
     public function __construct(ContainerInterface $container)
     {
         parent::__construct($container);
         $this->conf = $this->settings['providers'][ProviderEnum::DISK->value];
+        $this->importPath = $this->settings['documentRoot'] . $this->conf['importPath'];
+        $this->cachePath = $this->settings['rootPath'] . $this->conf['cachePath'];
     }
 
     public function setProvider(Provider $provider): void
@@ -34,23 +38,11 @@ class DiskService extends BaseService implements ApiInterface
         $this->provider = $provider;
     }
 
-    public function getImportMaxSize(): ?int
-    {
-        return $this->conf['import_max_count'];
-    }
-
     public function init(): bool
     {
         // check directories
-        $importPath = $this->settings['rootPath'] . $this->conf['import_path'];
-        if (!file_exists($importPath) && !mkdir($importPath, 0777, true) && !is_dir($importPath)) {
-            throw new \RuntimeException(sprintf('Directory "%s" was not created', $importPath));
-        }
-
-        $cachePath = $this->settings['rootPath'] . $this->conf['cache_path'];
-        if (!file_exists($cachePath) && !mkdir($cachePath, 0777, true) && !is_dir($cachePath)) {
-            throw new RuntimeException(sprintf('Directory "%s" was not created', $cachePath));
-        }
+        Utilities::ensureDirectoryExists($this->importPath);
+        Utilities::ensureDirectoryExists($this->cachePath);
 
         return true;
     }
@@ -73,7 +65,7 @@ class DiskService extends BaseService implements ApiInterface
     public function getAlbums(): array
     {
         $albums = [];
-        $sets = $this->getListOnDisk($this->conf['import_path']);
+        $sets = $this->getListOnDisk($this->importPath);
         foreach ($sets as $i => $set) {
             $items = $this->getListOnDisk($set['path']);
             $names = array_column($items, 'name');
@@ -81,14 +73,14 @@ class DiskService extends BaseService implements ApiInterface
             $videos = preg_grep($this->conf['accept_video_file_types'], $names);
 
             $album = new Album();
-            $album->fid = $set['id'];
+            $album->fid = $set['name'];
             $album->setProvider($this->provider);
-            $album->title = $set['name'];
+            $album->title = ucfirst($set['name']);
             if (count($images)) {
                 $album->cover = $images[0];
                 $coverItem = new Photo();
                 $coverItem->fid = $images[0];
-                $coverItem->url = $this->getItemUrl("{$set['path']}/{$images[0]}");
+                $coverItem->url = $this->getItemUrl($album->fid, $images[0]);
                 $album->setCoverItem($coverItem);
             }
             $album->photos = count($images);
@@ -102,27 +94,27 @@ class DiskService extends BaseService implements ApiInterface
 
     public function getItems(Album $album): array
     {
-        $itemsList = $this->getItemsByAlbumId($album->fid);
+        $itemsList = $this->getItemsByAlbumFid($album->fid);
         $items = [];
 
         foreach ($itemsList as $i => $media) {
-            if (!$this->isImage($media['name'])) {
+            if (!$this->isAllowedImage($media['name'])) {
                 continue;
             }
-            $meta = $this->getImageProperties($media['fullPath']);
+            $meta = $this->getImageProperties($media['path']);
             $item = new Photo();
             $item->id = Utilities::uid();
             $item->fid = $media['name'];
             if (isset($album->id)) {
                 $item->album = $album->id;
             }
-            $item->title = $media['name'];
+            $item->title = ucfirst($media['name']);
             $item->type = ItemTypeEnum::IMAGE;
             if (isset($meta['exif']['DateTimeOriginal'])) {
                 $datetime = DateTime::createFromFormat('Y:m:d H:i:s', $meta['exif']['DateTimeOriginal']);
                 $item->datetaken = $datetime->format('Y-m-d H:i:s');
             }
-            $item->url = $this->getItemUrl($media['path']);
+            $item->url = $this->getItemUrl($album->fid, $item->fid);
             $item->width = $meta['size'][0];
             $item->height = $meta['size'][1];
             $item->sizes = $this->mapSizes($item);
@@ -135,7 +127,7 @@ class DiskService extends BaseService implements ApiInterface
 
     public function getItemsFidList(Album $album): array
     {
-        $itemsList = $this->getItemsByAlbumId($album->fid);
+        $itemsList = $this->getItemsByAlbumFid($album->fid);
 
         return array_column($itemsList, 'name');
     }
@@ -146,9 +138,12 @@ class DiskService extends BaseService implements ApiInterface
             $album->videos !== $compareAlbum->videos;
     }
 
-    public function readFile(Album $album, Photo $item, ItemSizeEnum $sizeEnum = null): array
+    public function readFile(Album $album, Photo $item, ItemSizeEnum $sizeEnum = null): ?array
     {
-        $path = "{$this->settings['rootPath']}{$this->conf['import_path']}/{$album->fid}/{$item->fid}";
+        $path = "{$this->importPath}/{$album->fid}/{$item->fid}";
+        if (!is_file($path)) {
+            return null;
+        }
         $source = pathinfo($path);
 
         if ($sizeEnum && isset($item->sizes[$sizeEnum->value])) {
@@ -161,11 +156,9 @@ class DiskService extends BaseService implements ApiInterface
                 $img->thumbnailImage($size->width, $size->height);
             }
             ImageService::autorotate($img);
-            $path = $this->settings['rootPath'] . $this->cacheFileName($sizeEnum, $item, $source['extension']);
+            $path = $this->cachePath . '/' . $this->cacheFileName($sizeEnum, $item, $source['extension']);
             $albumPath = dirname($path);
-            if (!file_exists($albumPath) && !mkdir($albumPath, 0777, true) && !is_dir($albumPath)) {
-                throw new RuntimeException(sprintf('Directory "%s" was not created', $albumPath));
-            }
+            Utilities::ensureDirectoryExists($albumPath);
             file_put_contents($path, $img);
             $img->clear();
         }
@@ -177,20 +170,58 @@ class DiskService extends BaseService implements ApiInterface
 
     public function clearCache(Album $album): void
     {
-        $path = $this->settings['rootPath'] . "{$this->conf['cache_path']}/{$album->id}";
+        $path = "{$this->cachePath}/{$album->id}";
 
-        Utilities::rmdir($path);
+        Utilities::deleteDir($path);
     }
 
-    private function getItemUrl($item): string
+    public function fixAlbum(string $albumFid): string
     {
-        return "{$this->baseUrl}{$item}";
+        $path = "$this->importPath/$albumFid";
+
+        if (is_dir($path)) {
+            $albumFid = Utilities::safeFn($this->importPath, $albumFid);
+        }
+
+        $itemsList = $this->getItemsByAlbumFid($albumFid);
+
+        foreach ($itemsList as $media) {
+            if (!is_file($media['path']) || !$this->isAllowedImage($media['name'])) {
+                continue;
+            }
+            Utilities::safeFn($path, $media['name']);
+        }
+
+        return $albumFid;
     }
 
-    private function getListOnDisk(string $pathPart): array
+    private function getItemUrl(string $album, string $item): string
+    {
+        return "{$this->conf['importPath']}/{$album}/{$item}";
+    }
+
+    private function cacheFileName(ItemSizeEnum $sizeEnum, Photo $item, string $ext): string
+    {
+        return "{$item->album}/{$item->id}_{$sizeEnum->value}." . strtolower($ext);
+    }
+
+    private function isMediaFile($file): bool
+    {
+        $mime = mime_content_type($file);
+
+        return (str_contains($mime, 'video/') || str_contains($mime, 'image/'));
+    }
+
+    private function isAllowedImage(string $name): bool
+    {
+        $images = preg_grep($this->conf['accept_image_file_types'], [$name]);
+
+        return count($images) === 1;
+    }
+
+    private function getListOnDisk(string $path): array
     {
         $data = [];
-        $path = "{$this->settings['rootPath']}$pathPart";
         if (!is_dir($path)) {
             $this->logger->error('Read list failed from: ' . $path);
             return $data;
@@ -199,18 +230,19 @@ class DiskService extends BaseService implements ApiInterface
         $list = scandir($path);
         // loop
         foreach ($list as $item) {
-            $subpath = "$path/$item";
-            if ($item === '.DS_Store' || $item === '.' || $item === '..' || !file_exists($subpath)) {
+            $itemPath = "$path/$item";
+            if (
+                $item === '.DS_Store' ||
+                $item === '.' ||
+                $item === '..' ||
+                (is_file($itemPath) && !$this->isMediaFile($itemPath))
+            ) {
                 continue;
             }
 
-            $safeName = Utilities::safeFn($path, $item);
-
             $data[] = [
                 'name' => $item,
-                'id' => $safeName,
-                'path' => "$pathPart/$safeName",
-                'fullPath' => "$path/$safeName",
+                'path' => $itemPath,
             ];
         }
 
@@ -241,24 +273,15 @@ class DiskService extends BaseService implements ApiInterface
         ];
     }
 
-    private function isImage(string $name): bool
+    private function getItemsByAlbumFid(string $albumFid): array
     {
-        $images = preg_grep($this->conf['accept_image_file_types'], [$name]);
+        $path = "$this->importPath/$albumFid";
 
-        return count($images) === 1;
-    }
-
-    private function getItemsByAlbumId(string $albumId): array
-    {
-        $sets = $this->getListOnDisk($this->conf['import_path']);
-        $names = array_column($sets, 'id');
-        $i = array_search($albumId, $names, true);
-        if ($i === false) {
-            throw new RuntimeException("Album $albumId not found");
+        if (!is_dir($path)) {
+            throw new RuntimeException("Album $albumFid not found");
         }
-        $set = $sets[$i];
 
-        return $this->getListOnDisk($set['path']);
+        return $this->getListOnDisk($path);
     }
 
     private function mapSizes(Photo $item): array
@@ -281,7 +304,7 @@ class DiskService extends BaseService implements ApiInterface
     {
         $size = new PhotoSize();
         $ext = pathinfo($item->url, PATHINFO_EXTENSION);
-        $size->url = $this->baseUrl . $this->cacheFileName($sizeEnum, $item, $ext);
+        $size->url = $this->baseUrl . $this->conf['cachePath'] . '/' . $this->cacheFileName($sizeEnum, $item, $ext);
         $providerSize = $this->conf['sizes'][$sizeEnum->value];
 
         if ($sizeEnum->value === 'sq150') {
@@ -298,12 +321,5 @@ class DiskService extends BaseService implements ApiInterface
         }
 
         return $size;
-    }
-
-    private function cacheFileName(ItemSizeEnum $sizeEnum, Photo $item, string $ext): string
-    {
-        $path = $this->conf['cache_path'];
-
-        return "$path/{$item->album}/{$item->id}_{$sizeEnum->value}." . strtolower($ext);
     }
 }

@@ -7,7 +7,7 @@
                  height="{{ item.height }}"
                  alt="{{ item.title }}"
                  title="{{ item.title }}"
-                 src="https://via.assets.so/img.jpg?w={{ item.width }}&h={{ item.height }}&bg=#111111"
+                 src="{{ placeholder(item.width, item.height, item.title) }}"
             />
         </a>
     </div>

@@ -30,7 +30,7 @@ $container = $containerBuilder->build();
 
 // Instantiate the app
 $app = AppFactory::createFromContainer($container);
-$app->setBasePath($config['base_path']);
+$app->setBasePath($config['basePath']);
 
 // Register middleware
 $middleware = require __DIR__ . '/app/middleware.php';

@@ -39,11 +39,6 @@ class FlickrService extends BaseService implements ApiInterface
         $this->provider = $provider;
     }
 
-    public function getImportMaxSize(): ?int
-    {
-        return $this->conf['import_max_count'];
-    }
-
     public function init(): bool
     {
         if (empty($this->conf['key']) || empty($this->conf['secret'])) {
@@ -158,7 +153,7 @@ class FlickrService extends BaseService implements ApiInterface
 
         foreach ($itemsList as $i => $media) {
             // calculate thumb parameters, originals are wrong in portrait
-            $this->calculateImageSizes($media);
+            // $this->calculateImageSizes($media);
             $item = new Photo();
             $item->fid = $media['id'];
             $item->album = $album->id;
@@ -192,7 +187,7 @@ class FlickrService extends BaseService implements ApiInterface
             $album->videos !== $compareAlbum->videos;
     }
 
-    public function readFile(Album $album, Photo $item, ItemSizeEnum $sizeEnum = null): array
+    public function readFile(Album $album, Photo $item, ItemSizeEnum $sizeEnum = null): ?array
     {
         $url = ($sizeEnum && isset($item->sizes[$sizeEnum->value]))
             ? $item->sizes[$sizeEnum->value]->url
@@ -201,10 +196,6 @@ class FlickrService extends BaseService implements ApiInterface
         $file['resource'] = Utilities::download($url, $this->settings['download']['referer']);
 
         return $file;
-    }
-
-    public function clearCache(Album $album): void
-    {
     }
 
     private function fetchItems(Album $album)
@@ -230,6 +221,7 @@ class FlickrService extends BaseService implements ApiInterface
         return "https://farm{$set['farm']}.staticflickr.com/{$set['server']}/{$set['primary']}_{$set['secret']}_{$size}.jpg";
     }
 
+    // TODO: deprecated, remove
     private function calculateImageSizes(array $photo): array
     {
         $width_o = (int) $photo['width_o'];
@@ -278,5 +270,15 @@ class FlickrService extends BaseService implements ApiInterface
         }
 
         return $sizes;
+    }
+
+
+    public function clearCache(Album $album): void
+    {
+    }
+
+    public function fixAlbum(string $albumFid): string
+    {
+        return $albumFid;
     }
 }

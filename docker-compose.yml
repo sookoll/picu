@@ -12,6 +12,7 @@ services:
             - database
         volumes:
             - ./src:/var/www/html/picu:rw
+            - ./gallery:/var/www/html/galerii:rw
             - ./docker/php/php.ini:/usr/local/etc/php/php.ini
             - ./docker/apache/vhosts:/etc/apache2/sites-enabled
         environment:

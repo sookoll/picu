@@ -127,16 +127,14 @@ class ProviderService extends BaseService
     {
         $apiService = $this->getProviderApiService($providerEnum);
         $provider = $this->getProvider($providerEnum);
-        $max = $apiService?->getImportMaxSize() ?: 1000;
+
+        // Fix album and album item names
+        $albumFid = $apiService?->fixAlbum($albumFid);
 
         /** @var Album $album */
-        $i = 0;
         foreach ($this->diff($providerEnum, $albumFid) as $album) {
             if ($albumFid && $albumFid !== $album->fid) {
                 continue;
-            }
-            if ($i >= $max) {
-                break;
             }
             try {
                 switch ($album->getStatus()?->type) {
@@ -144,19 +142,16 @@ class ProviderService extends BaseService
                         $items = $apiService?->getItems($album);
                         $this->albumService->create($album);
                         $this->albumService->import($provider, $album, $items);
-                        $i++;
                         break;
                     case ItemStatusEnum::CHANGE:
                         $items = $apiService?->getItems($album);
                         $this->albumService->update($album);
                         $this->albumService->import($provider, $album, $items);
-                        $i++;
                         break;
                     case ItemStatusEnum::DELETE:
                         $apiService?->clearCache($album);
                         $this->itemService->deleteAll($album);
                         $this->albumService->delete($album);
-                        $i++;
                         break;
                 }
             } catch (\Exception $e) {
@@ -181,7 +176,7 @@ class ProviderService extends BaseService
         return true;
     }
 
-    private function diffAlbums(ProviderEnum $providerEnum, array $dbData, $providerData): array
+    private function diffAlbums(ProviderEnum $providerEnum, array $dbData, array $providerData): array
     {
         $apiService = $this->getProviderApiService($providerEnum);
         $data = [];

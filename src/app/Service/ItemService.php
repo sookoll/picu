@@ -152,7 +152,7 @@ class ItemService extends BaseService
             'title' => $item->title,
             'description' => $item->description ?? null,
             'type' => $item->type->value,
-            'datetaken' => $item->datetaken,
+            'datetaken' => $item->datetaken ?? null,
             'url' => $item->url,
             'width' => $item->width,
             'height' => $item->height,
