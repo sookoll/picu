@@ -3,6 +3,28 @@
 
     'use strict';
 
+    function copy (str) {
+        return new Promise((resolve, reject) => {
+            try {
+                const el = document.createElement('textarea')
+                el.value = str
+                el.style.position = 'absolute'
+                el.style.left = '-9999px'
+                document.body.appendChild(el)
+                el.select()
+                const successful = document.execCommand('copy')
+                document.body.removeChild(el)
+                if (successful) {
+                    resolve()
+                } else {
+                    reject(Error(successful))
+                }
+            } catch (err) {
+                reject(err)
+            }
+        })
+    }
+
     const request = (url, data = {}, cb = null, type = 'GET') => {
         $.ajax({
             url,
@@ -56,10 +78,9 @@
         });
     });
 
-    $('#editor .thumbs a').on('click', (e) => {
+    $('#editor .thumbs a.thumb').on('click', (e) => {
         e.preventDefault();
     })
-    $("#editor .thumbs .caption").removeClass('hidden');
     $("#editor h1 span").on('keydown', (e) => {
         if (e.which === 13) {
             e.preventDefault();
@@ -74,28 +95,40 @@
         const description = $(e.target).val().trim();
         albumUpdate({ description })
     });
-    $('#editor .viewbox i').on('click', (e) => {
-        const itemId = $(e.target).closest('a').data('fid');
+    $('#editor .img-toolbar .cover').on('click', (e) => {
+        e.preventDefault();
+        const target = $(e.currentTarget);
+        const itemId = target.data('fid');
         albumUpdate({ cover: itemId }, (result) => {
             if (result !== false) {
-                $('#editor .viewbox i').removeClass('active');
-                $(e.target).addClass('active')
+                $('#editor .viewbox .cover').removeClass('active');
+                target.addClass('active');
             }
         })
     })
 
-    $("#editor .thumbs .caption").on('keydown', (e) => {
+    $("#editor .thumbs .caption").removeClass('hidden').on('keydown', (e) => {
         if (e.which === 13) {
             e.preventDefault();
-            const href = $(e.target).closest('a').attr('href');
+            const href = $(e.target).closest('.viewbox').find('a.thumb').attr('href');
             const title = $(e.target).text().trim();
             itemUpdate(href, { title });
         }
     }).on('blur', (e) => {
-        const href = $(e.target).closest('a').attr('href');
+        const href = $(e.target).closest('.viewbox').find('a.thumb').attr('href');
         const title = $(e.target).text().trim();
         itemUpdate(href, { title });
     });
+
+    $('#editor .copy').on('click', (e) => {
+        e.preventDefault();
+        const url = $(e.target).attr('href');
+        copy(url)
+            .then(() => {
+            })
+            .catch(() => {
+            })
+    })
 
 
 }(jQuery, window, endpoints));
