@@ -56,7 +56,7 @@
             {% if album.status or not provider.editable %}
             <span>{{ album.title }}</span>
             {% else %}
-            <a href="{{ url_for('provider_album', { 'provider': provider.id, 'album': album.id }) }}" target="_blank">{{ album.title }}</a>
+            <a href="{{ url_for('provider_album', { 'provider': provider.id, 'album': album.id }) }}">{{ album.title }}</a>
             {% endif %}
         </h4>
         <div  class="text-muted small">{{ album.description }}</div>
