@@ -19,3 +19,20 @@ To rollback last migration:
 ```
 php vendor/bin/phoenix rollback --config=conf/phoenix.php
 ```
+
+## Deploy
+
+```bash
+wget https://github.com/sookoll/picu/archive/refs/heads/master.zip
+unzip master.zip
+cp htdocs/picu/.env picu-master/src/
+cp htdocs/picu/media picu-master/src/media
+nano picu-master/src/.env
+cd picu-master/src/
+composer install
+php vendor/bin/phoenix migrate --config=conf/phoenix.php
+cd ../../
+mv htdocs/picu ./picu-bak
+mv picu-master/src htdocs/picu
+rm -rf master.zip picu-master
+```

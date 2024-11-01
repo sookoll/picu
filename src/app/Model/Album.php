@@ -10,7 +10,7 @@ class Album extends Item
     public int $photos = 0;
     public int $videos = 0;
     private ?Provider $provider = null;
-    private ?Photo $coverItem = null;
+    public ?Photo $coverItem = null;
 
     public function getProvider(): ?Provider
     {
