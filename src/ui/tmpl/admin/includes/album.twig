@@ -96,11 +96,11 @@
                     <i class="glyphicon glyphicon-open"></i> Upload
                     <input type="file" name="files[]" accept="image/*" multiple />
                 </a>
-                <a href="{{ url_for('album_delete', { 'provider': provider.id, 'album': album.id }) }}" class="btn btn-sm btn-link album-delete" title="Eemalda album">
+                <a href="{{ url_for('album_delete', { 'provider': provider.id, 'album': album.id }) }}" class="album-delete btn btn-sm btn-link" title="Eemalda album">
                     <i class="glyphicon glyphicon-remove"></i> Eemalda album
                 </a>
                 {% if provider.editable %}
-                    <a href="{{ url_for('clear_cache', { 'provider': provider.id, 'album': album.id }) }}" class="btn btn-sm btn-link album-clear-cache" title="Kustuta puhvri pildid">
+                    <a href="{{ url_for('clear_cache', { 'provider': provider.id, 'album': album.id }) }}" class="album-clear-cache btn btn-sm btn-link" title="Kustuta puhvri pildid">
                         <i class="glyphicon glyphicon-refresh"></i> Kustuta puhvri pildid
                     </a>
                 {% endif %}
