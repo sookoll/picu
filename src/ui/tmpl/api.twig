@@ -1,0 +1,66 @@
+{% extends '@__main__/layout.twig' %}
+
+{% block contents %}
+    <div>
+        <header>
+            <div class="col-xs-6">
+                <h2>Picu API <span class="badge">{{ version }}</span></h2>
+            </div>
+            <div class="col-xs-6 text-right">
+                <div class="btn-group">
+                </div>
+            </div>
+            <div class="clearfix"></div>
+        </header>
+        <section class="col-xs-12 col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">Picu API v1</div>
+                <div class="panel-body">
+                    <p class="text-muted">
+                        API token is required to request private data. Without API token, only public data will return.<br>
+                        <code>
+                            {{ full_url_for('api') }}/v1/{request}?token={api_key}
+                        </code>
+                    </p>
+                </div>
+                <ul class="list-group">
+                    <li class="list-group-item">
+                        <span class="badge bg-success">public</span>
+                        Available image sizes:
+                        <a href="{{ full_url_for('api_v1_sizes') }}" target="_blank">
+                            {{ full_url_for('api_v1_sizes') }}
+                        </a>
+                    </li>
+                    <li class="list-group-item">
+                        <span class="badge">private</span>
+                        Available albums:
+                        <a href="{{ full_url_for('api_v1_set') }}" target="_blank">
+                            {{ full_url_for('api_v1_set') }}
+                        </a>
+                    </li>
+                    <li class="list-group-item">
+                        <span class="badge">private</span>
+                        Album:
+                        <a href="{{ full_url_for('api_v1_set', { 'album': '{album.id}' }) }}" target="_blank">
+                            {{ full_url_for('api_v1_set', { 'album': '{album.id}' }) }}
+                        </a>
+                    </li>
+                    <li class="list-group-item">
+                        <span class="badge">private</span>
+                        Available items by album:
+                        <a href="{{ full_url_for('api_v1_item', { 'album': '{album.id}' }) }}" target="_blank">
+                            {{ full_url_for('api_v1_item', { 'album': '{album.id}' }) }}
+                        </a>
+                    </li>
+                    <li class="list-group-item">
+                        <span class="badge">private</span>
+                        Item:
+                        <a href="{{ full_url_for('api_v1_item', { 'album': '{album.id}', 'item': '{item.id}' }) }}" target="_blank">
+                            {{ full_url_for('api_v1_item', { 'album': '{album.id}', 'item': '{item.id}' }) }}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </section>
+    </div>
+{% endblock %}

@@ -3,6 +3,7 @@ namespace App\Controller;
 
 use App\Enum\ProviderEnum;
 use App\Model\Album;
+use App\Model\Photo;
 use App\Service\ProviderService;
 use App\Service\Utilities;
 use Psr\Container\ContainerInterface;
@@ -115,25 +116,24 @@ final class AdminController extends BaseController
         $provider = $this->service->getProvider($providerEnum);
         $albumFid = $args['album'] ?? null;
         if (
+            $albumFid &&
             $provider->isEnabled() &&
             $provider->isAuthenticated() &&
-            $albumFid
+            $this->service->sync($providerEnum, $albumFid)
         ) {
-            if ($this->service->sync($providerEnum, $albumFid)) {
-                $result = [];
-                /** @var Album $album */
-                foreach($this->service->diff($providerEnum, $albumFid) as $album) {
-                    $result[] = [
-                        'id' => $album->id,
-                        'fid' => $album->fid,
-                        'photos' => $album->photos,
-                        'videos' => $album->videos,
-                        'status' => $album->getStatus()
-                    ];
-                }
-
-                return $this->json($response, $result);
+            $result = [];
+            /** @var Album $album */
+            foreach($this->service->diff($providerEnum, $albumFid) as $album) {
+                $result[] = [
+                    'id' => $album->id,
+                    'fid' => $album->fid,
+                    'photos' => $album->photos,
+                    'videos' => $album->videos,
+                    'status' => $album->getStatus()
+                ];
             }
+
+            return $this->json($response, $result);
         }
 
         return $response->withStatus(404);
@@ -185,7 +185,8 @@ final class AdminController extends BaseController
         $albumId = $args['album'] ?? null;
         if (
             $albumId &&
-            $provider->isEnabled()
+            $provider->isEnabled() &&
+            $provider->isEditable()
         ) {
             $album = $this->service->getAlbumService()->get($albumId);
             if ($album) {
@@ -220,7 +221,8 @@ final class AdminController extends BaseController
         if (
             $albumId &&
             $itemId &&
-            $provider->isEnabled()
+            $provider->isEnabled() &&
+            $provider->isEditable()
         ) {
             $item = $this->service->getItemService()->get($itemId);
             if ($item) {
@@ -231,6 +233,32 @@ final class AdminController extends BaseController
                     }
                 }
                 $this->service->getItemService()->update($item);
+
+                return $response->withStatus(204);
+            }
+        }
+
+        return $response->withStatus(400);
+    }
+
+    public function clearCache(Request $request, Response $response, array $args = []): Response
+    {
+        $this->service->setBaseUrl($request->getAttribute('base_url'));
+        $providerEnum = ProviderEnum::from($args['provider']);
+        $provider = $this->service->getProvider($providerEnum);
+        $albumId = $args['album'] ?? null;
+        if (
+            $albumId &&
+            $provider->isEnabled() &&
+            $provider->isEditable()
+        ) {
+            $album = $this->service->getAlbumService()->get($albumId);
+            if ($album) {
+                $this->service->getProviderApiService($providerEnum)?->clearCache($album);
+                foreach($this->service->getItemService()->getList($album) as $item) {
+                    $item->sizes = $this->service->getProviderApiService($providerEnum)?->mapSizes($item);
+                    $this->service->getItemService()->update($item);
+                }
 
                 return $response->withStatus(204);
             }

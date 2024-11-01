@@ -4,7 +4,10 @@
     </div>
     <div class="col-xs-6 text-right">
         <div class="btn-group">
-            <a href="{{ url_for('logout') }}" class="btn btn-danger">
+            <a href="{{ url_for('api') }}" class="btn btn-link">
+                API
+            </a>
+            <a href="{{ url_for('logout') }}" class="btn btn-link">
                 {{ user.username }}
                 <i class="glyphicon glyphicon-off"></i>
             </a>

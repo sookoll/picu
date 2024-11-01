@@ -195,6 +195,30 @@ class DiskService extends BaseService implements ApiInterface
         return $albumFid;
     }
 
+    public function mapSizes(Photo $item): array
+    {
+        $sizes = [];
+        foreach (ItemSizeEnum::cases() as $sizeEnum) {
+            $providerSize = $this->conf['sizes'][$sizeEnum->value];
+            $itemSizes = [$item->width, $item->height];
+            if (!$providerSize) {
+                continue;
+            }
+            if ($providerSize > max($itemSizes)) {
+                $size = new PhotoSize();
+                $size->url = $item->url;
+                $size->width = $item->width;
+                $size->height = $item->height;
+            } else {
+                $size = $this->getSize($sizeEnum, $item);
+            }
+
+            $sizes[$sizeEnum->value] = $size;
+        }
+
+        return $sizes;
+    }
+
     private function getItemUrl(string $album, string $item): string
     {
         return "{$this->conf['importPath']}/{$album}/{$item}";
@@ -282,30 +306,6 @@ class DiskService extends BaseService implements ApiInterface
         }
 
         return $this->getListOnDisk($path);
-    }
-
-    private function mapSizes(Photo $item): array
-    {
-        $sizes = [];
-        foreach (ItemSizeEnum::cases() as $sizeEnum) {
-            $providerSize = $this->conf['sizes'][$sizeEnum->value];
-            $itemSizes = [$item->width, $item->height];
-            if (!$providerSize) {
-                continue;
-            }
-            if ($providerSize > max($itemSizes)) {
-                $size = new PhotoSize();
-                $size->url = $item->url;
-                $size->width = $item->width;
-                $size->height = $item->height;
-            } else {
-                $size = $this->getSize($sizeEnum, $item);
-            }
-
-            $sizes[$sizeEnum->value] = $size;
-        }
-
-        return $sizes;
     }
 
     private function getSize(ItemSizeEnum $sizeEnum, Photo $item): PhotoSize

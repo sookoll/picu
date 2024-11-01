@@ -1,21 +1,31 @@
 <div class="media album" id="{{ album.id }}" data-fid="{{ album.fid }}">
     <div class="media-left">
-        <a href="{{ url_for('album', { 'album': album.id }) }}" target="_blank">
-            {% if album.coverItem %}
-            <img
-                class="media-object"
-                src="{{ album.coverItem.sizes.SQ150.url ?: album.coverItem.url }}"
-                title="{{ album.title }}"
-                alt="{{ album.title }}"/>
+        {% if album.coverItem %}
+            {% if 'SQ150' in album.coverItem.sizes|keys %}
+                {% set cover = album.coverItem.sizes.SQ150.url %}
             {% else %}
+                {% set cover = album.coverItem.url %}
+            {% endif %}
+        {% else %}
+            {% set cover = placeholder() %}
+        {% endif %}
+        {% if album.status %}
             <img
+                onerror="imgerror(this)"
                 class="media-object"
-                src="{{ placeholder() }}"
+                src="{{ cover }}"
                 title="{{ album.title }}"
                 alt="{{ album.title }}"/>
-            {% endif %}
-        </a>
-
+        {% else %}
+            <a href="{{ album.status ? '#' : url_for('album', { 'album': album.id }) }}" target="{{ album.status ? '_self' : '_blank' }}">
+                <img
+                    onerror="imgerror(this)"
+                    class="media-object"
+                    src="{{ cover }}"
+                    title="{{ album.title }}"
+                    alt="{{ album.title }}"/>
+            </a>
+        {% endif %}
     </div>
     <div class="media-body info">
         <h4 class="media-heading">
@@ -43,11 +53,19 @@
                     {% endif %}
                 {% endif %}
             </span>
-            <a href="{{ url_for('album', { 'album': album.id }) }}" target="_blank">{{ album.title }}</a>
+            {% if album.status or not provider.editable %}
+            <span>{{ album.title }}</span>
+            {% else %}
+            <a href="{{ url_for('provider_album', { 'provider': provider.id, 'album': album.id }) }}" target="_blank">{{ album.title }}</a>
+            {% endif %}
         </h4>
         <div  class="text-muted small">{{ album.description }}</div>
         <div  class="text-muted small">
-            <a href="{{ url_for('api_item', { 'album': album.id }, { 'token': token }) }}" target="_blank">{{ album.id }}</a>
+            {% if album.status %}
+                {{ album.id }}
+            {% else %}
+                <a href="{{ url_for('api_v1_item', { 'album': album.id }, { 'token': token }) }}" target="_blank">{{ album.id }}</a>
+            {% endif %}
              | {{ album.fid }}
         </div>
         <div class="items-count {{ album.status and album.status.type.name == 'OK' ? 'text-success' : '' }}">
@@ -82,8 +100,8 @@
                     <i class="glyphicon glyphicon-remove"></i> Eemalda album
                 </a>
                 {% if provider.editable %}
-                    <a href="{{ url_for('provider_album', { 'provider': provider.id, 'album': album.id }) }}" class="btn btn-sm btn-link" title="Muuda">
-                        Muuda
+                    <a href="{{ url_for('clear_cache', { 'provider': provider.id, 'album': album.id }) }}" class="btn btn-sm btn-link album-clear-cache" title="Kustuta puhvri pildid">
+                        <i class="glyphicon glyphicon-refresh"></i> Kustuta puhvri pildid
                     </a>
                 {% endif %}
                 <a href="{{ url_for('provider_album', { 'provider': provider.id, 'album': album.id }) }}" class="album-set-public btn btn-sm btn-link" data-public="{{ album.public ? 1 : 0 }}">

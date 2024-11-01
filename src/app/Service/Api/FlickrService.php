@@ -163,7 +163,7 @@ class FlickrService extends BaseService implements ApiInterface
             $item->url = $media['url_o'];
             $item->width = $media['width_o'];
             $item->height = $media['height_o'];
-            $item->sizes = $this->mapSizes($media);
+            $item->sizes = $this->mapFlickrSizes($media);
             $item->sort = $i;
             $items[] = $item;
         }
@@ -254,14 +254,14 @@ class FlickrService extends BaseService implements ApiInterface
         return $photo;
     }
 
-    private function mapSizes(mixed $media)
+    public function mapFlickrSizes(array $media): array
     {
         $sizes = [];
         foreach (ItemSizeEnum::cases() as $sizeEnum) {
-            $providerSize = $this->conf['sizes'][$sizeEnum->value];
-            if (!$providerSize || !isset($media["url_{$providerSize}"])) {
+            if (!array_key_exists($sizeEnum->value, $this->conf['sizes']) || !isset($media["url_{$this->conf['sizes'][$sizeEnum->value]}"])) {
                 continue;
             }
+            $providerSize = $this->conf['sizes'][$sizeEnum->value];
             $size =  new PhotoSize();
             $size->url = $media["url_{$providerSize}"];
             $size->width = $media["width_{$providerSize}"];
@@ -272,7 +272,6 @@ class FlickrService extends BaseService implements ApiInterface
         return $sizes;
     }
 
-
     public function clearCache(Album $album): void
     {
     }
@@ -280,5 +279,10 @@ class FlickrService extends BaseService implements ApiInterface
     public function fixAlbum(string $albumFid): string
     {
         return $albumFid;
+    }
+
+    public function mapSizes(Photo $item): array
+    {
+        return [];
     }
 }
