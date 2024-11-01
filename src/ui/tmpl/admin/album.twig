@@ -42,6 +42,7 @@
                          height="{{ photo.sizes.S320.height }}"
                          alt="{{ photo.title ?: photo.id }}"
                          src="{{ placeholder(photo.sizes.S320.width, photo.sizes.S320.height, photo.title ?: photo.id) }}"
+                         onerror="imgerror(this)"
                     />
                     <div class="caption" contenteditable="true" tabindex="{{ loop.index + 1 }}">
                         {{ photo.title }}
@@ -93,5 +94,6 @@
     </script>
     <script src="{{ base_url }}/ui/lib/jquery/jquery.lazyload.min.js" type="text/javascript"></script>
     <script src="{{ base_url }}/ui/lib/justifiedGallery.min/jquery.justifiedGallery.min.js" type="text/javascript"></script>
+    <script src="{{ base_url }}/ui/js/imgerror.js" type="text/javascript"></script>
     <script src="{{ base_url }}/ui/js/edit.js" type="text/javascript"></script>
 {% endblock %}

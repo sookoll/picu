@@ -21,6 +21,14 @@ class ApiController extends BaseController
         parent::__construct($container);
     }
 
+    public function index(Request $request, Response $response, array $args = []): Response
+    {
+        return $this->render($request, $response, 'api.twig', [
+            'page' => 'admin',
+            'token' => $this->settings['api_token']
+        ]);
+    }
+
     public function sizes(Request $request, Response $response, array $args = []): Response
     {
         $sizes = [];
@@ -39,11 +47,8 @@ class ApiController extends BaseController
     {
         $this->albumService->setBaseUrl($request->getAttribute('base_url'));
         $albumId = $args['album'] ?? null;
-        $apiToken = $this->settings['api_token'];
-        $queryParams = $request->getQueryParams();
-        $token = $queryParams['token'] ?? null;
+        $onlyPublic = $this->validateToken($request);
 
-        $onlyPublic = !$token || $token !== $apiToken;
         $set = $this->albumService->getList(null, $albumId, null, $onlyPublic);
 
         return $this->json($response, $set);
@@ -58,11 +63,8 @@ class ApiController extends BaseController
         $this->itemService->setBaseUrl($request->getAttribute('base_url'));
         $albumId = $args['album'] ?? null;
         $itemId = $args['item'] ?? null;
-        $apiToken = $this->settings['api_token'];
-        $queryParams = $request->getQueryParams();
-        $token = $queryParams['token'] ?? null;
+        $onlyPublic = $this->validateToken($request);
 
-        $onlyPublic = !$token || $token !== $apiToken;
         $set = $this->albumService->getList(null, $albumId, null, $onlyPublic);
         $items = [];
         if (count($set) === 1) {

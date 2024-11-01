@@ -117,6 +117,7 @@ class AlbumService extends BaseService
             $album->photos = $row['photos'];
             $album->videos = $row['videos'];
             $album->public = $row['public'];
+            $album->sort = $row['sort'];
             $coverItem = $this->itemService->getByFid($album, $album->cover);
             if ($coverItem) {
                 $album->setCoverItem($coverItem);
@@ -152,7 +153,7 @@ class AlbumService extends BaseService
             'id' => $album->id,
             'fid' => $album->fid,
             'provider' => $album->getProvider()->getId(),
-            'title' => $album->title,
+            'title' => $album->title ?? null,
             'description' => $album->description ?? null,
             'cover' => $album->cover ?? null,
             'owner' => $album->owner ?? null,
@@ -173,8 +174,9 @@ class AlbumService extends BaseService
 
     public function update(Album $album): void
     {
-        if (!isset($album->id)) {
-            throw new Exception("Album update failed, missing id: {$album->getProvider()->getId()}, $album->fid");
+        $provider = $album->getProvider();
+        if (!isset($album->id) || !$provider) {
+            throw new Exception("Album update failed, missing id or provider: , $album->fid");
         }
         $sql = "
             UPDATE picu_album SET
@@ -189,8 +191,8 @@ class AlbumService extends BaseService
         ";
         $params = [
             'id' => $album->id,
-            'provider' => $album->getProvider()->getId(),
-            'title' => $album->title,
+            'provider' => $provider->getId(),
+            'title' => $album->title ?? null,
             'description' => $album->description ?? null,
             'cover' => $album->cover,
             'owner' => $album->owner ?? null,

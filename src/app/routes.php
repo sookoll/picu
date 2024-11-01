@@ -50,18 +50,22 @@ return function (App $app) {
         $group->put('/{provider}/{album}/{item}', AdminController::class . ':updateItem')
             ->setName('provider_item')
             ->add(AuthenticationMiddleware::class);
+        $group->delete('/{provider}/{album}/cache', AdminController::class . ':clearCache')
+            ->setName('clear_cache')
+            ->add(AuthenticationMiddleware::class);
         $group->delete('/{provider}/{album}', AdminController::class . ':delete')
             ->setName('album_delete')
             ->add(AuthenticationMiddleware::class);
     });
     // API
-    $app->group('/api', function (Group $group) {
+    $app->get('/api', ApiController::class . ':index')->setName('api');
+    $app->group('/api/v1', function (Group $group) {
+        $group->get('/sizes', ApiController::class . ':sizes')
+            ->setName('api_v1_sizes');
         $group->get('/set[/{album}]', ApiController::class . ':set')
-            ->setName('api_set');
-        $group->get('/item/sizes', ApiController::class . ':sizes')
-            ->setName('api_item_sizes');
+            ->setName('api_v1_set');
         $group->get('/item/{album}[/{item}]', ApiController::class . ':item')
-            ->setName('api_item');
+            ->setName('api_v1_item');
     });
     // Image
     if ($settings['providers']['disk']['enabled']) {

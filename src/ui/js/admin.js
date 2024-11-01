@@ -81,6 +81,15 @@
         })
     }
 
+    $('.album-clear-cache').on('click', function(e) {
+        e.preventDefault();
+        request(e.target, e.target.href, {}, (result) => {
+            if (result !== false) {
+
+            }
+        }, 'DELETE')
+    });
+
     $('.album-delete').on('click', function(e) {
         e.preventDefault();
         request(e.target, e.target.href, {}, (result) => {

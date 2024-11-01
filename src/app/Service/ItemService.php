@@ -176,7 +176,7 @@ class ItemService extends BaseService
     public function update(Photo $item): void
     {
         if (!isset($item->id)) {
-            throw new RuntimeException("Item update failed, missing id: $item->album, $item->fid");
+            throw new Exception("Item update failed, missing id: $item->album, $item->fid");
         }
         $sql = "
             UPDATE picu_item SET

@@ -22,4 +22,5 @@ interface ApiInterface
     public function readFile(Album $album, Photo $item, ItemSizeEnum $sizeEnum = null): ?array;
     public function clearCache(Album $album): void;
     public function fixAlbum(string $albumFid): string;
+    public function mapSizes(Photo $item): array;
 }

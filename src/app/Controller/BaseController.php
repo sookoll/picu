@@ -61,6 +61,19 @@ abstract class BaseController
             ->withStatus(302);
     }
 
+    protected function validateToken(Request $request): bool
+    {
+        $onlyPublic = true;
+        $apiToken = $this->settings['api_token'];
+        $queryParams = $request->getQueryParams();
+        $token = $queryParams['token'] ?? null;
+        if ($token && $token === $apiToken) {
+            $onlyPublic = false;
+        }
+
+        return $onlyPublic;
+    }
+
     /**
      * @throws SyntaxError
      * @throws RuntimeError
