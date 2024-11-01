@@ -94,10 +94,12 @@ return static function (ContainerBuilder $containerBuilder) {
                 'accept_video_file_types' => '/\.(mov|mpeg|mp4)$/i',
                 'sizes' => [
                     'SQ150' => 150,
+                    'S150' => 150,
                     'SQ320' => 320,
                     'S320' => 320,
                     'SQ640' => 640,
                     'M640' => 640,
+                    'SQ800' => 800,
                     'M800' => 800,
                     'L1024'=> 1024,
                     'L1600'=> 1600,
