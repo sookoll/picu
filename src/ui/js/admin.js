@@ -94,8 +94,9 @@
         e.preventDefault();
         request(e.target, e.target.href, {}, (result) => {
             if (result !== false) {
+                const albumCount = $(e.target).closest('.provider').find('.album').length
                 $(e.target).closest('.album').remove();
-                if ($(e.target).closest('.provider').find('.album').length < 1) {
+                if (albumCount < 2) {
                     window.location.reload();
                 }
             }
