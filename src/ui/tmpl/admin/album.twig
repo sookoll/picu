@@ -3,10 +3,10 @@
 {% block meta %}
     <meta property="og:title" content="{{ album.title }}" />
     <meta property="og:url" content="{{ current_url() }}" />
-    <meta property="og:image:width" content="{{ album.coverItem.sizes.m800.width ?: album.coverItem.width }}" />
-    <meta property="og:image:height" content="{{ album.coverItem.sizes.m800.height ?: album.coverItem.height }}" />
-    <meta property="og:image" content="{{ album.coverItem.sizes.m800.url ?: album.coverItem.url }}" />
-    <link rel="image_src" href="{{ album.coverItem.sizes.m800.url ?: album.coverItem.url }}" />
+    <meta property="og:image:width" content="{{ album.coverItem.sizes.M800.width ?: album.coverItem.width }}" />
+    <meta property="og:image:height" content="{{ album.coverItem.sizes.M800.height ?: album.coverItem.height }}" />
+    <meta property="og:image" content="{{ album.coverItem.sizes.M800.url ?: album.coverItem.url }}" />
+    <link rel="image_src" href="{{ album.coverItem.sizes.M800.url ?: album.coverItem.url }}" />
 {% endblock %}
 
 {% block styles %}
@@ -23,7 +23,7 @@
 
         </div>
     </nav>
-    <header style="background-image:linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),url({{ album.coverItem.sizes.m800.url ?: album.coverItem.url }})">
+    <header style="background-image:linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),url({{ album.coverItem.sizes.M800.url ?: album.coverItem.url }})">
         <h1 class="text-center"><span contenteditable="true">{{ album.title }}</span></h1>
         <textarea>{{ album.description }}</textarea>
     </header>
@@ -32,16 +32,16 @@
             {% for photo in items %}
                 <a data-id="{{ photo.id }}" data-fid="{{ photo.fid }}" class="viewbox" href="{{ url_for('provider_item', { 'provider': provider.id, 'album': album.id, 'item': photo.id }) }}">
                     <img class="lazy"
-                         data-original="{{ photo.sizes.m800.url }}"
-                         data-vb-src="{{ photo.sizes.l2048.url }}"
-                         data-vb-w="{{ photo.sizes.l2048.width }}"
-                         data-vb-h="{{ photo.sizes.l2048.height }}"
+                         data-original="{{ photo.sizes.M800.url }}"
+                         data-vb-src="{{ photo.sizes.L2048.url }}"
+                         data-vb-w="{{ photo.sizes.L2048.width }}"
+                         data-vb-h="{{ photo.sizes.L2048.height }}"
                          data-img-link="{{ url_for('item', { 'album': album.id, 'item': photo.id }) }}"
                          data-img-download="{{ url_for('download', { 'album': album.id, 'item': photo.id }) }}"
-                         width="{{ photo.sizes.s320.width }}"
-                         height="{{ photo.sizes.s320.height }}"
+                         width="{{ photo.sizes.S320.width }}"
+                         height="{{ photo.sizes.S320.height }}"
                          alt="{{ photo.title ?: photo.id }}"
-                         src="{{ placeholder(photo.sizes.s320.width, photo.sizes.s320.height, photo.title ?: photo.id) }}"
+                         src="{{ placeholder(photo.sizes.S320.width, photo.sizes.S320.height, photo.title ?: photo.id) }}"
                     />
                     <div class="caption" contenteditable="true" tabindex="{{ loop.index + 1 }}">
                         {{ photo.title }}

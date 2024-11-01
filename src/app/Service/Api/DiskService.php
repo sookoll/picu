@@ -149,7 +149,7 @@ class DiskService extends BaseService implements ApiInterface
         if ($sizeEnum && isset($item->sizes[$sizeEnum->value])) {
             $size = $item->sizes[$sizeEnum->value];
             $img = ImageService::create($path);
-            if ($sizeEnum->value === 'sq150') {
+            if ($sizeEnum->isSquare()) {
                 $img->cropThumbnailImage($size->width, $size->height);
             }
             else {
@@ -290,10 +290,18 @@ class DiskService extends BaseService implements ApiInterface
         foreach (ItemSizeEnum::cases() as $sizeEnum) {
             $providerSize = $this->conf['sizes'][$sizeEnum->value];
             $itemSizes = [$item->width, $item->height];
-            if (!$providerSize || $providerSize > max($itemSizes)) {
+            if (!$providerSize) {
                 continue;
             }
-            $size = $this->getSize($sizeEnum, $item);
+            if ($providerSize > max($itemSizes)) {
+                $size = new PhotoSize();
+                $size->url = $item->url;
+                $size->width = $item->width;
+                $size->height = $item->height;
+            } else {
+                $size = $this->getSize($sizeEnum, $item);
+            }
+
             $sizes[$sizeEnum->value] = $size;
         }
 
@@ -307,7 +315,7 @@ class DiskService extends BaseService implements ApiInterface
         $size->url = $this->baseUrl . $this->conf['cachePath'] . '/' . $this->cacheFileName($sizeEnum, $item, $ext);
         $providerSize = $this->conf['sizes'][$sizeEnum->value];
 
-        if ($sizeEnum->value === 'sq150') {
+        if ($sizeEnum->isSquare()) {
             $size->width = $providerSize;
             $size->height = $providerSize;
         }

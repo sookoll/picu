@@ -3,10 +3,10 @@
 {% block meta %}
     <meta property="og:title" content="{{ item.title }}" />
     <meta property="og:url" content="{{ current_url() }}" />
-    <meta property="og:image:width" content="{{ item.sizes.m800.width ?: item.width }}" />
-    <meta property="og:image:height" content="{{ item.sizes.m800.height ?: item.height }}" />
-    <meta property="og:image" content="{{ item.sizes.m800.url ?: item.url }}" />
-    <link rel="image_src" href="{{ item.sizes.m800.url ?: item.url }}" />
+    <meta property="og:image:width" content="{{ item.sizes.M800.width ?: item.width }}" />
+    <meta property="og:image:height" content="{{ item.sizes.M800.height ?: item.height }}" />
+    <meta property="og:image" content="{{ item.sizes.M800.url ?: item.url }}" />
+    <link rel="image_src" href="{{ item.sizes.M800.url ?: item.url }}" />
 {% endblock %}
 
 {% block styles %}
@@ -19,8 +19,8 @@
     <div id="viewbox">
         <div class="img-container">
             <div>
-                <img src="{{ item.sizes.m800.url ?: item.url }}" class="" />
-                <img src="{{ item.sizes.l2048.url ?: item.url }}" class="" />
+                <img src="{{ item.sizes.M800.url ?: item.url }}" class="" />
+                <img src="{{ item.sizes.L2048.url ?: item.url }}" class="" />
             </div>
         </div>
         <div class="tools row">
@@ -39,11 +39,11 @@
     </div>
     <!-- th -->
     <img class="thumbnail hidden"
-         data-original="{{ item.sizes.l2048.url ?: item.url }}"
-         style="width:{{ item.sizes.m800.width ?: item.width }}px;height:{{ item.sizes.m800.width ?: item.width }}px;"
-         data-vb-src="{{ item.sizes.l2048.url ?: item.url }}"
-         data-vb-w="{{ item.sizes.l2048.width ?: item.width }}"
-         data-vb-h="{{ item.sizes.l2048.height ?: item.height }}" />
+         data-original="{{ item.sizes.L2048.url ?: item.url }}"
+         style="width:{{ item.sizes.M800.width ?: item.width }}px;height:{{ item.sizes.M800.width ?: item.width }}px;"
+         data-vb-src="{{ item.sizes.L2048.url ?: item.url }}"
+         data-vb-w="{{ item.sizes.L2048.width ?: item.width }}"
+         data-vb-h="{{ item.sizes.L2048.height ?: item.height }}" />
 {% endblock %}
 
 {% block scripts %}
