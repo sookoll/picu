@@ -179,6 +179,10 @@ class DiskService extends BaseService implements ApiInterface
     {
         $path = "$this->importPath/$albumFid";
 
+        if (!file_exists($path)) {
+            return $albumFid;
+        }
+
         if (is_dir($path)) {
             $albumFid = Utilities::safeFn($this->importPath, $albumFid);
         }
@@ -204,7 +208,7 @@ class DiskService extends BaseService implements ApiInterface
             if (!$providerSize) {
                 continue;
             }
-            if ($providerSize > max($itemSizes)) {
+            if (!$this->conf['allowLargerThumb'] && $providerSize > max($itemSizes)) {
                 $size = new PhotoSize();
                 $size->url = $item->url;
                 $size->width = $item->width;

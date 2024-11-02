@@ -275,6 +275,10 @@ a, a:hover, a:visited {
 #editor .img-toolbar .cover.active {
     color: #f0ad4e;
 }
+#editor .img-toolbar .dropdown-menu {
+    bottom: -210px;
+    overflow-y: auto;
+}
 #editor .img-toolbar .dropdown-menu li {
     position: relative;
 }

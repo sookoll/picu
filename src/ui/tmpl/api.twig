@@ -26,35 +26,35 @@
                 <ul class="list-group">
                     <li class="list-group-item">
                         <span class="badge bg-success">public</span>
-                        Available image sizes:
+                        Available image sizes: GET
                         <a href="{{ full_url_for('api_v1_sizes') }}" target="_blank">
                             {{ full_url_for('api_v1_sizes') }}
                         </a>
                     </li>
                     <li class="list-group-item">
                         <span class="badge">private</span>
-                        Available albums:
+                        Available albums: GET
                         <a href="{{ full_url_for('api_v1_set') }}" target="_blank">
                             {{ full_url_for('api_v1_set') }}
                         </a>
                     </li>
                     <li class="list-group-item">
                         <span class="badge">private</span>
-                        Album:
+                        Album: GET
                         <a href="{{ full_url_for('api_v1_set', { 'album': '{album.id}' }) }}" target="_blank">
                             {{ full_url_for('api_v1_set', { 'album': '{album.id}' }) }}
                         </a>
                     </li>
                     <li class="list-group-item">
                         <span class="badge">private</span>
-                        Available items by album:
+                        Available items by album: GET
                         <a href="{{ full_url_for('api_v1_item', { 'album': '{album.id}' }) }}" target="_blank">
                             {{ full_url_for('api_v1_item', { 'album': '{album.id}' }) }}
                         </a>
                     </li>
                     <li class="list-group-item">
                         <span class="badge">private</span>
-                        Item:
+                        Item: GET
                         <a href="{{ full_url_for('api_v1_item', { 'album': '{album.id}', 'item': '{item.id}' }) }}" target="_blank">
                             {{ full_url_for('api_v1_item', { 'album': '{album.id}', 'item': '{item.id}' }) }}
                         </a>

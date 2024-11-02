@@ -105,6 +105,7 @@ return static function (ContainerBuilder $containerBuilder) {
                     'L1600'=> 1600,
                     'L2048'=> 2048,
                 ],
+                'allowLargerThumb' => $_ENV['DISK_ALLOW_LARGER_THUMBNAIL'] === 'true',
             ]
         ],
         // upload
