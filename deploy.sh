@@ -11,4 +11,5 @@ cd ../../
 rm -rf picu-bak
 mv htdocs/picu ./picu-bak
 mv picu-master/src htdocs/picu
+mv ./picu-bak/media htdocs/picu/
 rm -rf master.zip picu-master
