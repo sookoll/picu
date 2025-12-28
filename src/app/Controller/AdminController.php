@@ -3,7 +3,6 @@ namespace App\Controller;
 
 use App\Enum\ProviderEnum;
 use App\Model\Album;
-use App\Model\Photo;
 use App\Service\ProviderService;
 use App\Service\Utilities;
 use Psr\Container\ContainerInterface;
@@ -185,8 +184,7 @@ final class AdminController extends BaseController
         $albumId = $args['album'] ?? null;
         if (
             $albumId &&
-            $provider->isEnabled() &&
-            $provider->isEditable()
+            $provider->isEnabled()
         ) {
             $album = $this->service->getAlbumService()->get($albumId);
             if ($album) {
