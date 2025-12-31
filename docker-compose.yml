@@ -2,7 +2,7 @@ services:
     webserver:
         container_name: picu_web
         build:
-            context: ./docker/php
+            context: .
         restart: 'always'
         ports:
             - '80:80'

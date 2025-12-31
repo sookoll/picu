@@ -5,40 +5,34 @@ FROM php:8.3-apache-bookworm
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Update
-RUN apt-get -y update --fix-missing && \
-    apt-get upgrade -y && \
-    apt-get --no-install-recommends install -y apt-utils && \
-    rm -rf /var/lib/apt/lists/*
-
-
 # Install useful tools and install important libaries
 RUN apt-get -y update && \
-    apt-get -y --no-install-recommends install nano wget \
-dialog \
-libsqlite3-dev \
-libsqlite3-0 && \
-    apt-get -y --no-install-recommends install default-mysql-client \
-zlib1g-dev \
-libzip-dev \
-libicu-dev && \
-    apt-get -y --no-install-recommends install --fix-missing apt-utils \
-build-essential \
-git \
-curl \
-libonig-dev && \
-    apt-get install -y iputils-ping && \
-    apt-get -y --no-install-recommends install --fix-missing libcurl4 \
-libcurl4-openssl-dev \
-zip \
-openssl && \
-    rm -rf /var/lib/apt/lists/* && \
-    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-# Install imagick
-RUN apt-get update && \
-    apt-get -y --no-install-recommends install --fix-missing libmagickwand-dev && \
+    apt-get upgrade -y && \
+    apt-get -y --no-install-recommends install --fix-missing \
+        apt-utils \
+        build-essential \
+        git \
+        curl \
+        nano \
+        wget \
+        dialog \
+        libsqlite3-dev \
+        libsqlite3-0 \
+        default-mysql-client \
+        zlib1g-dev \
+        libzip-dev \
+        libicu-dev \
+        libonig-dev \
+        iputils-ping \
+        libcurl4 \
+        libcurl4-openssl-dev \
+        zip \
+        openssl \
+        libmagickwand-dev && \
     rm -rf /var/lib/apt/lists/*
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Imagick Commit to install
 # https://github.com/Imagick/imagick
@@ -55,6 +49,9 @@ RUN cd /usr/local/src && \
     cd .. && \
     rm -rf imagick && \
     docker-php-ext-enable imagick
+
+# Cleanup
+RUN rm -rf /usr/local/src/*
 
 # Other PHP8 Extensions
 RUN docker-php-ext-install pdo_mysql && \
@@ -88,5 +85,16 @@ RUN a2enmod ssl && a2enmod rewrite
 # Enable apache modules
 RUN a2enmod rewrite headers
 
-# Cleanup
-RUN rm -rf /usr/src/*
+# Set working directory
+WORKDIR /var/www/html
+
+# Copy Apache virtual host config
+COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
+
+# Copy PHP configuration
+COPY docker/php.ini /usr/local/etc/php/conf.d/custom.ini
+
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html
+
+EXPOSE 80
