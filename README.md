@@ -6,18 +6,18 @@ Your personal photo gallery. Can serve photos from Flickr and/or from local disk
 ## Setup
 
 1. Copy .env.example to .env
-2. Edit .env
+2. Edit .env, use /admin/hash/<pwd> to generate one, if needed
 3. Edit .htaccess - RewriteBase if not in root
 4. `composer install`
-5. `php vendor/bin/phoenix migrate --config=conf/phoenix.php`
+5. `composer migrate`
 
 To create new migration:
 ```
-php vendor/bin/phoenix create --config=conf/phoenix.php "Migrations\InitialSetup"
+composer create -- "Migrations\NewMigrationName"
 ```
 To rollback last migration:
 ```
-php vendor/bin/phoenix rollback --config=conf/phoenix.php
+composer rollback
 ```
 
 ## Deploy

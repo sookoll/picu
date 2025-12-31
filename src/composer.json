@@ -1,6 +1,6 @@
 {
     "name": "sookoll/picu",
-    "version": "2.5.2",
+    "version": "2.5.3",
     "description": "Personal photo gallery based on Flickr API private photos",
     "homepage": "https://sookoll.ee/picu",
     "config": {
@@ -35,6 +35,9 @@
         }
     },
     "scripts": {
-        "start": "php -S localhost:8080"
+        "start": "php -S localhost:8080",
+        "migrate": "php vendor/bin/phoenix migrate --config=conf/phoenix.php",
+        "rollback": "php vendor/bin/phoenix rollback --config=conf/phoenix.php",
+        "create": "php vendor/bin/phoenix create --config=conf/phoenix.php"
     }
 }
