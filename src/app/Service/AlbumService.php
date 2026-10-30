@@ -212,6 +212,31 @@ class AlbumService extends BaseService
     }
 
     /**
+     * @param Provider $provider
+     * @param Album[] $albums
+     * @return void
+     */
+    public function updateSorts(Provider $provider, array $albums): void
+    {
+        $sql = "
+            UPDATE picu_album SET sort = :sort
+            WHERE provider = :provider AND fid = :fid
+        ";
+
+        try {
+            $stmt = $this->db->prepare($sql);
+            foreach ($albums as $album) {
+                $stmt->bindValue('provider', $provider->getId());
+                $stmt->bindValue('fid', $album->fid);
+                $stmt->bindValue('sort', $album->sort, PDO::PARAM_INT);
+                $stmt->execute();
+            }
+        } catch (PDOException $e) {
+            $this->logger->error('Update album sort order failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * @param Album $album
      * @return void
      * @throws Exception

@@ -130,9 +130,16 @@ class ProviderService extends BaseService
 
         // Fix album and album item names
         $albumFid = $apiService?->fixAlbum($albumFid);
+        $providerData = $apiService?->getAlbums() ?? [];
+        $this->albumService->updateSorts($provider, $providerData);
+        $dbData = $this->albumService->getList($provider, null, $albumFid);
+
+        if ($albumFid) {
+            $providerData = array_filter($providerData, static fn($album) => $album->fid === $albumFid);
+        }
 
         /** @var Album $album */
-        foreach ($this->diff($providerEnum, $albumFid) as $album) {
+        foreach ($this->diffAlbums($providerEnum, $dbData, $providerData) as $album) {
             if ($albumFid && $albumFid !== $album->fid) {
                 continue;
             }
