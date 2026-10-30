@@ -27,10 +27,10 @@ ViewBox.prototype = {
 
     },
 
-    resize: function (){
+    resize: function (width, height){
         if(!this.th)
             return;
-        var dims = this.calculateDimensions();
+        var dims = this.calculateDimensions(width, height);
         this.dom_modal.parent().css({
             'width': dims.w + 'px',
             'height': dims.h + 'px'
@@ -38,41 +38,54 @@ ViewBox.prototype = {
         return dims.load;
     },
 
-    calculateDimensions: function (){
+    parseDimension: function (value) {
+        value = parseFloat(value);
+        return isFinite(value) && value > 0 ? value : null;
+    },
+
+    fitDimensions: function (width, height) {
         var maxW = $(window).width();
         var maxH = $(window).height();
-        var newW = this.th[0].naturalWidth;
-        var newH = this.th[0].naturalHeight;
+        var newW = width;
+        var newH = height;
 
-        if(newW > maxW || newH > maxH){
-            // if h is bigger
-            if(newH > maxH){
-                newW = (maxH * newW) / newH;
-                newH = maxH;
-            }
-            // if new width is still bigger
-            if(newW > maxW){
-                newH = (maxW * newH) / newW;
-                newW = maxW;
-            }
-            load = false
+        if(newH > maxH){
+            newW = (maxH * newW) / newH;
+            newH = maxH;
         }
-        else {
-            newW = this.th.attr('data-vb-w');
-            newH = this.th.attr('data-vb-h');
-            // if h is bigger
-            if(newH > maxH){
-                newW = (maxH * newW) / newH;
-                newH = maxH;
-            }
-            // if new width is still bigger
-            if(newW > maxW){
-                newH = (maxW * newH) / newW;
-                newW = maxW;
-            }
-            load = true
+        if(newW > maxW){
+            newH = (maxW * newH) / newW;
+            newW = maxW;
         }
-        return {w: newW, h: newH, load: load};
+
+        return {w: newW, h: newH};
+    },
+
+    calculateDimensions: function (width, height){
+        var maxW = $(window).width();
+        var maxH = $(window).height();
+        var detectedW = this.parseDimension(width);
+        var detectedH = this.parseDimension(height);
+        var thW = detectedW || this.parseDimension(this.th[0].naturalWidth);
+        var thH = detectedH || this.parseDimension(this.th[0].naturalHeight);
+        var vbW = this.parseDimension(this.th.attr('data-vb-w'));
+        var vbH = this.parseDimension(this.th.attr('data-vb-h'));
+        var detected = detectedW && detectedH;
+        var load = false;
+
+        if (!(thW && thH)) {
+            thW = vbW || maxW;
+            thH = vbH || maxH;
+        }
+
+        if(!detected && thW <= maxW && thH <= maxH && vbW && vbH){
+            thW = vbW;
+            thH = vbH;
+            load = true;
+        }
+
+        var dims = this.fitDimensions(thW, thH);
+        return {w: dims.w, h: dims.h, load: load};
     }
 }
 

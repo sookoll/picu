@@ -26,16 +26,16 @@
             {% for photo in items %}
                 <a data-id="{{ photo.id }}" class="viewbox" href="{{ full_url_for('album', { 'album': album.id, 'item': photo.id }) }}">
                     <img class="lazy"
-                         data-original="{{ photo.sizes.M800.url }}"
-                         data-vb-src="{{ photo.sizes.L2048.url }}"
-                         data-vb-w="{{ photo.sizes.L2048.width }}"
-                         data-vb-h="{{ photo.sizes.L2048.height }}"
+                         data-original="{{ photo.sizes.M800.url ?: photo.url }}"
+                         data-vb-src="{{ photo.sizes.L2048.url ?: photo.url }}"
+                         data-vb-w="{{ photo.sizes.L2048.width ?: photo.width }}"
+                         data-vb-h="{{ photo.sizes.L2048.height ?: photo.height }}"
                          data-img-link="{{ full_url_for('item', { 'album': album.id, 'item': photo.id }) }}"
                          data-img-download="{{ full_url_for('download', { 'album': album.id, 'item': photo.id }) }}"
-                         width="{{ photo.sizes.S320.width }}"
-                         height="{{ photo.sizes.S320.height }}"
+                         width="{{ photo.sizes.S320.width ?: photo.width }}"
+                         height="{{ photo.sizes.S320.height ?: photo.height }}"
                          alt="{{ photo.title ?: photo.id }}"
-                         src="{{ placeholder(photo.sizes.S320.width, photo.sizes.S320.height, photo.title ?: photo.id) }}"
+                         src="{{ placeholder(photo.sizes.S320.width ?: photo.width, photo.sizes.S320.height ?: photo.height, photo.title ?: photo.id) }}"
                     />
                     <div class="caption">
                         {{ photo.title ?: photo.fid }}
